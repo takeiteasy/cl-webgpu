@@ -1,0 +1,93 @@
+{
+  "webgpu-headers": {
+    "commit": "673658bc2bd70ec39fc55ebe6bb0173cf6d0a603",
+    "files": [
+      "deps/webgpu/webgpu.h",
+      "deps/wgpu-native/ffi/webgpu-headers/webgpu.h"
+    ]
+  },
+  "wgpu-native": {
+    "commit": "9176708ef5c32b40bd0b8edc17c171f52959ef33",
+    "files": [
+      "deps/wgpu-native/Cargo.toml",
+      "deps/wgpu-native/Cargo.lock",
+      "deps/wgpu-native/build.rs",
+      "deps/wgpu-native/rust-toolchain.toml",
+      "deps/wgpu-native/src/unimplemented.rs",
+      "deps/wgpu-native/src/lib.rs",
+      "deps/wgpu-native/src/logging.rs",
+      "deps/wgpu-native/src/conv.rs",
+      "deps/wgpu-native/src/utils.rs",
+      "deps/wgpu-native/ffi/wgpu.h",
+      "deps/webgpu/wgpu.h"
+    ]
+  },
+  "glfw3webgpu": {
+    "commit": "8f14534e79c590e8a7f7795ea42e01bedea9e137",
+    "files": [
+      "deps/glfw3webgpu/glfw3webgpu.c",
+      "deps/glfw3webgpu/glfw3webgpu.h",
+      "deps/glfw3webgpu/CMakeLists.txt"
+    ]
+  },
+  "glfw": {
+    "commit": "b00e6a8a88ad1b60c0a045e696301deb92c9a13e",
+    "files": [
+      "deps/glfw/include/GLFW/glfw3.h",
+      "deps/glfw/include/GLFW/glfw3native.h",
+      "deps/glfw/src/posix_time.c",
+      "deps/glfw/src/monitor.c",
+      "deps/glfw/src/null_init.c",
+      "deps/glfw/src/null_joystick.c",
+      "deps/glfw/src/init.c",
+      "deps/glfw/src/x11_init.c",
+      "deps/glfw/src/platform.c",
+      "deps/glfw/src/osmesa_context.c",
+      "deps/glfw/src/x11_window.c",
+      "deps/glfw/src/vulkan.c",
+      "deps/glfw/src/null_monitor.c",
+      "deps/glfw/src/input.c",
+      "deps/glfw/src/posix_thread.c",
+      "deps/glfw/src/null_window.c",
+      "deps/glfw/src/egl_context.c",
+      "deps/glfw/src/macos_time.c",
+      "deps/glfw/src/context.c",
+      "deps/glfw/src/posix_poll.c",
+      "deps/glfw/src/posix_module.c",
+      "deps/glfw/src/xkb_unicode.c",
+      "deps/glfw/src/x11_monitor.c",
+      "deps/glfw/src/glx_context.c",
+      "deps/glfw/src/linux_joystick.c",
+      "deps/glfw/src/window.c",
+      "deps/glfw/src/cocoa_joystick.m",
+      "deps/glfw/src/cocoa_init.m",
+      "deps/glfw/src/cocoa_window.m",
+      "deps/glfw/src/nsgl_context.m",
+      "deps/glfw/src/cocoa_monitor.m",
+      "deps/glfw/src/posix_thread.h",
+      "deps/glfw/src/internal.h",
+      "deps/glfw/src/null_platform.h",
+      "deps/glfw/src/macos_time.h",
+      "deps/glfw/src/cocoa_platform.h",
+      "deps/glfw/src/posix_poll.h",
+      "deps/glfw/src/x11_platform.h",
+      "deps/glfw/src/linux_joystick.h",
+      "deps/glfw/src/posix_time.h",
+      "deps/glfw/src/mappings.h",
+      "deps/glfw/src/cocoa_joystick.h",
+      "deps/glfw/src/null_joystick.h",
+      "deps/glfw/src/platform.h",
+      "deps/glfw/src/CMakeLists.txt",
+      "deps/glfw/src/mappings.h.in",
+      "deps/glfw/CMakeLists.txt",
+      "deps/glfw/CMake/i686-w64-mingw32.cmake",
+      "deps/glfw/CMake/GenerateMappings.cmake",
+      "deps/glfw/CMake/i686-w64-mingw32-clang.cmake",
+      "deps/glfw/CMake/x86_64-w64-mingw32-clang.cmake",
+      "deps/glfw/CMake/x86_64-w64-mingw32.cmake",
+      "deps/glfw/CMake/cmake_uninstall.cmake.in",
+      "deps/glfw/CMake/glfw3Config.cmake.in",
+      "deps/glfw/CMake/glfw3.pc.in"
+    ]
+  }
+}

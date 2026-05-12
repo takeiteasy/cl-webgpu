@@ -1,0 +1,12 @@
+--- a/deps/webgpu/wgpu.h
++++ b/deps/webgpu/wgpu.h
+@@ -1520,9 +1520,8 @@
+     void *wgpuTextureGetNativeMetalTexture(WGPUTexture texture);
+
+-    void wgpuRenderPassEncoderSetImmediates(WGPURenderPassEncoder encoder, uint32_t offset, uint32_t sizeBytes, void const *data);
+-    void wgpuComputePassEncoderSetImmediates(WGPUComputePassEncoder encoder, uint32_t offset, uint32_t sizeBytes, void const *data);
+-    void wgpuRenderBundleEncoderSetImmediates(WGPURenderBundleEncoder encoder, uint32_t offset, uint32_t sizeBytes, void const *data);
++    // wgpuRenderPassEncoderSetImmediates, wgpuComputePassEncoderSetImmediates,
++    // wgpuRenderBundleEncoderSetImmediates now declared in webgpu.h (promoted to spec).
+
+     void wgpuRenderPassEncoderMultiDrawIndirect(WGPURenderPassEncoder encoder, WGPUBuffer buffer, uint64_t offset, uint32_t count);

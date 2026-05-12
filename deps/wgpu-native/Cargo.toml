@@ -1,0 +1,135 @@
+[package]
+name = "wgpu-native"
+version = "0.0.0"
+authors = [
+	"Dzmitry Malyshau <kvark@mozilla.com>",
+	"Joshua Groves <josh@joshgroves.com>",
+	"Noah Charlton <ncharlton002@gmail.com>",
+	"Almar Klein <almar@almarklein.org>",
+	"Rajesh Malviya <rajveer0malviya@gmail.com>",
+]
+edition = "2021"
+rust-version = "1.87"
+description = "Native WebGPU implementation based on wgpu-core"
+homepage = "https://github.com/gfx-rs/wgpu-native"
+repository = "https://github.com/gfx-rs/wgpu-native"
+keywords = ["graphics"]
+categories = ["graphics", "rendering"]
+license = "MIT OR Apache-2.0"
+
+[workspace]
+members = ["."]
+default-members = ["."]
+resolver = "2"
+
+[workspace.dependencies.wgc]
+package = "wgpu-core"
+version = "29.0.1"
+
+[workspace.dependencies.wgt]
+package = "wgpu-types"
+version = "29.0.1"
+
+[workspace.dependencies.hal]
+package = "wgpu-hal"
+version = "29.0.1"
+
+[workspace.dependencies.naga]
+package = "naga"
+version = "29.0.1"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[features]
+default = ["wgsl", "spirv", "glsl", "dx12", "metal", "vulkan", "gles"]
+
+## Enables the DX12 backend on Windows.
+dx12 = ["wgc/dx12"]
+
+## Enables the Metal backend on macOS & iOS.
+metal = ["wgc/metal"]
+
+## Enables the GLES backend via [ANGLE](https://github.com/google/angle) on macOS using.
+angle = ["wgc/gles"]
+
+## Enables the Vulkan backend on Windows, Linux, and Android.
+vulkan = ["wgc/vulkan"]
+## Enables the OpenGL/GLES backend on Windows, Linux, Android.
+gles = ["wgc/gles"]
+
+## Enables the Vulkan backend on macOS & iOS.
+vulkan-portability = ["wgc/vulkan"]
+
+#! **Note:** In the documentation, if you see that an item depends on a backend,
+#! it means that the item is only available when that backend is enabled _and_ the backend
+#! is supported on the current platform.
+
+#! ### Shading language support
+# --------------------------------------------------------------------
+
+## Enable accepting SPIR-V shaders as input.
+spirv = ["naga/spv-in", "wgc/spirv"]
+
+## Enable accepting GLSL shaders as input.
+glsl = ["naga/glsl-in", "wgc/glsl"]
+
+## Enable accepting WGSL shaders as input.
+wgsl = ["wgc/wgsl"]
+
+#! ### Logging & Tracing
+# --------------------------------------------------------------------
+#! The following features do not have any effect on the WebGPU backend.
+
+## Apply run-time checks, even in release builds. These are in addition
+## to the validation carried out at public APIs in all builds.
+strict_asserts = ["wgc/strict_asserts", "wgt/strict_asserts"]
+
+## Log all API entry points at info instead of trace level.
+api_log_info = ["wgc/api_log_info"]
+
+## Enables serialization via `serde` on common wgpu types.
+serde = ["dep:serde", "wgc/serde"]
+
+# Uncomment once upstream adds it again — https://github.com/gfx-rs/wgpu/issues/5974
+# ## Allow writing of trace capture files. See [`Adapter::request_device`].
+# trace = ["serde", "wgc/trace"]
+
+## Allow deserializing of trace capture files that were written with the `trace` feature.
+## To replay a trace file use the [wgpu player](https://github.com/gfx-rs/wgpu/tree/trunk/player).
+replay = ["serde", "wgc/replay"]
+
+[dependencies.wgc]
+workspace = true
+
+[dependencies.hal]
+workspace = true
+
+[target.'cfg(all(unix, not(target_os = "ios"), not(target_os = "macos")))'.dependencies]
+hal = { workspace = true, features = ["renderdoc"] }
+
+[target.'cfg(windows)'.dependencies]
+hal = { workspace = true, features = ["dx12", "renderdoc"] }
+
+[dependencies.wgt]
+workspace = true
+
+[dependencies.naga]
+workspace = true
+optional = true
+
+[dependencies.serde]
+version = "1"
+optional = true
+
+[dependencies]
+raw-window-handle = "0.6.0"
+paste = "1"
+log = "0.4"
+thiserror = "2"
+parking_lot = "0.12"
+smallvec = "1"
+bitflags = "2"
+
+[build-dependencies]
+bindgen = "0.72"
