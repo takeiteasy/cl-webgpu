@@ -13,18 +13,22 @@ LDFLAGS ?= -shared
 # Output library names
 ifeq ($(UNAME_S),Darwin)
     SHIM_LIB = libwebgpu_shim.dylib
-    GLFW3WEBGPU_LIB = libglfw3webgpu.dylib
+    GLFW_COMBINED_LIB = shim/libglfw3.dylib
+    GLFW_WEBGPU_LIB = shim/libglfw3webgpu.dylib
+    GLFW_STATIC = deps/glfw/build/src/libglfw3.a
     WGPU_NATIVE_LIB = libwgpu_native.dylib
     WGPU_NATIVE_TARGET = deps/wgpu-native/target/release/$(WGPU_NATIVE_LIB)
     UNDEFINED_FLAGS = -Wl,-undefined,dynamic_lookup
 else ifeq ($(OS),Windows_NT)
     SHIM_LIB = webgpu_shim.dll
-    GLFW3WEBGPU_LIB = glfw3webgpu.dll
+    GLFW_COMBINED_LIB = shim/glfw3.dll
+    GLFW_STATIC = deps/glfw/build/src/libglfw3.a
     WGPU_NATIVE_LIB = wgpu_native.dll
     WGPU_NATIVE_TARGET = deps/wgpu-native/target/release/$(WGPU_NATIVE_LIB)
 else
     SHIM_LIB = libwebgpu_shim.so
-    GLFW3WEBGPU_LIB = libglfw3webgpu.so
+    GLFW_COMBINED_LIB = shim/libglfw3.so
+    GLFW_STATIC = deps/glfw/build/src/libglfw3.a
     WGPU_NATIVE_LIB = libwgpu_native.so
     WGPU_NATIVE_TARGET = deps/wgpu-native/target/release/$(WGPU_NATIVE_LIB)
 endif
@@ -36,7 +40,7 @@ CFLAGS += -Ideps/webgpu -Ideps/glfw/include -Ideps/glfw3webgpu -Ishim
 ifeq ($(UNAME_S),Darwin)
     LDFLAGS += -dynamiclib $(UNDEFINED_FLAGS)
     WGPU_LDFLAGS = -framework Metal -framework CoreGraphics -framework IOKit -framework Cocoa -framework QuartzCore
-    GLFW_LDFLAGS = -framework Cocoa -framework IOKit -framework CoreFoundation
+    GLFW_LDFLAGS = -framework Cocoa -framework IOKit -framework CoreFoundation -framework CoreVideo -framework QuartzCore
     GLFW_DEFINES = -D_GLFW_COCOA
 else ifeq ($(OS),Windows_NT)
     GLFW_DEFINES = -D_GLFW_WIN32
@@ -44,9 +48,6 @@ else
     # Assume Linux - could be X11 or Wayland, default to X11 for now
     GLFW_DEFINES = -D_GLFW_X11
 endif
-
-# GLFW library (shared)
-GLFW_LIB = deps/glfw/build/src/libglfw.dylib
 
 # Source files
 SHIM_SRCS = shim/webgpu_shim.c
@@ -56,7 +57,7 @@ GLFW3WEBGPU_SRC = deps/glfw3webgpu/glfw3webgpu.c
 
 .PHONY: all clean libwgpu-native libglfw
 
-all: $(SHIM_LIB) $(GLFW3WEBGPU_LIB)
+all: $(SHIM_LIB) $(GLFW_WEBGPU_LIB)
 
 # Build the shim library
 $(SHIM_LIB): $(SHIM_OBJS)
@@ -65,21 +66,56 @@ $(SHIM_LIB): $(SHIM_OBJS)
 shim/%.o: shim/%.c shim/webgpu_shim.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Build glfw3webgpu library
-# On macOS we must compile as Objective-C because glfw3webgpu.c includes
-# <Foundation/Foundation.h> and <QuartzCore/CAMetalLayer.h>.
-$(GLFW3WEBGPU_LIB): $(GLFW3WEBGPU_SRC) $(GLFW_LIB)
+# Build glfw3webgpu bridge library.
+# Uses -undefined dynamic_lookup so it shares whatever GLFW instance is
+# already loaded in the process (e.g. from cl-glfw3 / homebrew GLFW).
+$(GLFW_WEBGPU_LIB): $(GLFW3WEBGPU_SRC)
 ifeq ($(UNAME_S),Darwin)
-	$(CC) -x objective-c $(CFLAGS) $(GLFW_DEFINES) $(LDFLAGS) -o $@ $(GLFW3WEBGPU_SRC) -Ldeps/glfw/build/src -lglfw $(GLFW_LDFLAGS) $(UNDEFINED_FLAGS)
+	$(CC) -x objective-c $(CFLAGS) $(GLFW_DEFINES) -dynamiclib \
+	  -I deps/glfw/include -I deps/webgpu -I deps/glfw3webgpu \
+	  -DGLFW_EXPOSE_NATIVE_COCOA \
+	  $(GLFW3WEBGPU_SRC) \
+	  $(UNDEFINED_FLAGS) \
+	  -framework Cocoa -framework IOKit -framework QuartzCore \
+	  -install_name @rpath/libglfw3webgpu.dylib \
+	  -o $@
 else
-	$(CC) $(CFLAGS) $(GLFW_DEFINES) $(LDFLAGS) -o $@ $(GLFW3WEBGPU_SRC) -Ldeps/glfw/build/src -lglfw $(GLFW_LDFLAGS) $(UNDEFINED_FLAGS)
+	$(CC) $(CFLAGS) $(GLFW_DEFINES) -shared \
+	  -I deps/glfw/include -I deps/webgpu -I deps/glfw3webgpu \
+	  $(GLFW3WEBGPU_SRC) \
+	  $(UNDEFINED_FLAGS) \
+	  -o $@
 endif
 
-# Build GLFW from source
-libglfw:
-	@echo "Building GLFW from source..."
+# Build combined GLFW + glfw3webgpu shared lib (requires GLFW static build first)
+$(GLFW_COMBINED_LIB): $(GLFW_STATIC)
+ifeq ($(UNAME_S),Darwin)
+	$(CC) -x objective-c $(CFLAGS) $(GLFW_DEFINES) -dynamiclib \
+	  -I deps/glfw/include -I deps/webgpu -I deps/glfw3webgpu \
+	  -DGLFW_EXPOSE_NATIVE_COCOA \
+	  $(GLFW3WEBGPU_SRC) \
+	  -all_load $(GLFW_STATIC) \
+	  $(GLFW_LDFLAGS) \
+	  -o $@
+else
+	$(CC) $(CFLAGS) $(GLFW_DEFINES) -shared \
+	  -I deps/glfw/include -I deps/webgpu -I deps/glfw3webgpu \
+	  $(GLFW3WEBGPU_SRC) \
+	  -Wl,--whole-archive $(GLFW_STATIC) -Wl,--no-whole-archive \
+	  $(GLFW_LDFLAGS) \
+	  $(UNDEFINED_FLAGS) \
+	  -o $@
+endif
+
+# Build GLFW as a static library from source
+libglfw: $(GLFW_STATIC)
+
+$(GLFW_STATIC):
+	@echo "Building GLFW (static) from source..."
 	mkdir -p deps/glfw/build
-	cd deps/glfw/build && cmake .. -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF -DCMAKE_BUILD_TYPE=Release
+	cd deps/glfw/build && cmake .. \
+	  -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF \
+	  -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release
 	$(MAKE) -C deps/glfw/build -j$$(sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
 # Build wgpu-native from source in deps/wgpu-native
@@ -93,4 +129,4 @@ libwgpu-native:
 build-all: libglfw libwgpu-native all
 
 clean:
-	rm -f $(SHIM_OBJS) $(SHIM_LIB) $(GLFW3WEBGPU_LIB)
+	rm -f $(SHIM_OBJS) $(SHIM_LIB) $(GLFW_WEBGPU_LIB) $(GLFW_COMBINED_LIB)

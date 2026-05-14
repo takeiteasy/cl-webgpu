@@ -10,7 +10,7 @@
   :components ((:module "src"
                 :components
                 ;; All files except library.lisp are AUTO-GENERATED.
-                ;; Run (cl-webgpu-codegen:generate) to regenerate.
+                ;; Run (cl-webgpu/codegen:generate) to regenerate.
                 ((:file "package")
                  (:file "library")
                  (:file "types")
@@ -23,12 +23,11 @@
   :license "MIT"
   :version "0.0.1"
   :serial t
-  :depends-on (#:cl-webgpu)
-  :components ((:module "src/glfw"
+  :depends-on (#:cl-webgpu #:cl-glfw3)
+  :components ((:module "glfw"
                 :components
                 ((:file "package")
-                 (:file "library")
-                 (:file "bindings")))))
+                 (:file "library")))))
 
 (asdf:defsystem #:cl-webgpu/shader
   :description "WGSL shader DSL for cl-webgpu"

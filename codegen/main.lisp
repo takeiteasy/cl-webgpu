@@ -1,7 +1,7 @@
 ;;;; codegen/main.lisp
 ;;;; Entry point for the cl-webgpu codegen.
 
-(in-package #:cl-webgpu-codegen)
+(in-package #:cl-webgpu/codegen)
 
 (defun resolve-path (base p)
   (if (uiop:absolute-pathname-p p)
@@ -25,7 +25,7 @@ Reads WEBGPU-H and WGPU-H, then writes:
 Paths are relative to the current working directory, or pass absolute paths.
 
 Typical usage from the cl-webgpu project root:
-  (cl-webgpu-codegen:generate)"
+  (cl-webgpu/codegen:generate)"
   (let* ((base (uiop:getcwd)))
     (flet ((p (x) (namestring (resolve-path base x))))
       (format t "~&Parsing ~A ...~%" (p webgpu-h))

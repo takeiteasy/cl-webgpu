@@ -1,7 +1,7 @@
 ;;;; codegen/name-transformer.lisp
 ;;;; Converts C identifiers to Lisp naming conventions.
 
-(in-package #:cl-webgpu-codegen)
+(in-package #:cl-webgpu/codegen)
 
 (defun camel-case-to-kebab (s)
   "Convert a CamelCase or mixedCase string to kebab-case.

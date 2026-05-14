@@ -4,10 +4,9 @@
 ;; Load the systems
 (ql:quickload '(:cl-webgpu :cl-webgpu/glfw))
 
-(defpackage #:cl-webgpu-triangle
-  (:use #:cl #:cffi #:cl-webgpu #:cl-webgpu/glfw))
-
-(in-package #:cl-webgpu-triangle)
+;; Run in the cl-webgpu package so struct slot symbols resolve correctly.
+;; cl-glfw3 calls are qualified explicitly below.
+(in-package #:cl-webgpu)
 
 ;; ============================================================================
 ;; Shader source
@@ -58,19 +57,19 @@ fn main() -> @location(0) vec4<f32> {
           (let ((chain-ptr (foreign-slot-pointer shader-source '(:struct wgpu-shader-source-wgsl) 'chain)))
             (setf (foreign-slot-value chain-ptr '(:struct wgpu-chained-struct) 'next) (null-pointer))
             (setf (foreign-slot-value chain-ptr '(:struct wgpu-chained-struct) 's-type) 2)) ; WGPUSType_ShaderSourceWGSL
-          
+
           ;; Set up code string view
           (setf code-data
                 (set-string-view (foreign-slot-pointer shader-source '(:struct wgpu-shader-source-wgsl) 'code)
                                  source))
-          
+
           ;; Set up descriptor
           (setf (foreign-slot-value descriptor '(:struct wgpu-shader-module-descriptor) 'next-in-chain)
                 (foreign-slot-pointer shader-source '(:struct wgpu-shader-source-wgsl) 'chain))
           (setf label-data
                 (set-string-view (foreign-slot-pointer descriptor '(:struct wgpu-shader-module-descriptor) 'label)
                                  label))
-          
+
           (wgpu-device-create-shader-module device descriptor))
       (progn
         (when code-data (foreign-free code-data))
@@ -87,26 +86,24 @@ fn main() -> @location(0) vec4<f32> {
 
   ;; --- Load libraries ---
   (let* ((base-dir (asdf:system-source-directory :cl-webgpu))
-         (shim-dir (merge-pathnames #P"shim/" base-dir))
-         (wgpu-dir (merge-pathnames #P"deps/wgpu-native/target/release/" base-dir)))
+         (shim-dir (namestring (merge-pathnames #P"shim/" base-dir)))
+         (wgpu-dir (namestring (merge-pathnames #P"deps/wgpu-native/target/release/" base-dir))))
     (format t "Loading libraries from ~a and ~a~%" shim-dir wgpu-dir)
-    (cl-webgpu:load-wgpu-libraries :wgpu-path (namestring wgpu-dir)
-                                   :shim-path (namestring shim-dir))
-    (cl-webgpu/glfw:load-glfw-libraries :glfw-path (namestring shim-dir)
-                                        :glfw3webgpu-path (namestring shim-dir)))
-  
+    (cl-webgpu:load-wgpu-libraries :wgpu-path wgpu-dir
+                                   :shim-path shim-dir)
+    (cl-webgpu/glfw:load-glfw-library :path shim-dir))
+
   ;; Disable SBCL floating-point traps (foreign libraries may trigger them)
   #+sbcl (sb-int:set-floating-point-modes :traps nil)
-  
+
   ;; --- Initialize GLFW ---
-  (when (zerop (glfw-init))
-    (error "Failed to initialize GLFW"))
-  
-  ;; --- Create window ---
-  (glfw-window-hint +glfw-client-api+ +glfw-no-api+)
-  (glfw-window-hint +glfw-resizable+ +glfw-false+)
-  
-  (let* ((window (glfw-create-window 640 480 "WebGPU Triangle" (null-pointer) (null-pointer)))
+  (cl-glfw3:initialize)
+
+  ;; --- Create window (hints passed as keyword args) ---
+  (let* ((window (cl-glfw3:create-window :width 640 :height 480
+                                         :title "WebGPU Triangle"
+                                         :client-api :no-api
+                                         :resizable nil))
          (instance nil)
          (adapter nil)
          (device nil)
@@ -114,11 +111,7 @@ fn main() -> @location(0) vec4<f32> {
          (pipeline nil)
          (width 640)
          (height 480))
-    
-    (when (null-pointer-p window)
-      (glfw-terminate)
-      (error "Failed to create GLFW window"))
-    
+
     (unwind-protect
         (progn
           ;; --- Create WebGPU instance ---
@@ -126,7 +119,7 @@ fn main() -> @location(0) vec4<f32> {
           (when (null-pointer-p instance)
             (error "Failed to create WebGPU instance"))
           (format t "Instance created~%")
-          
+
           ;; --- Request adapter ---
           (let ((adapter-options (foreign-alloc '(:struct wgpu-request-adapter-options))))
             (setf (foreign-slot-value adapter-options '(:struct wgpu-request-adapter-options) 'next-in-chain)
@@ -141,7 +134,7 @@ fn main() -> @location(0) vec4<f32> {
                   0) ; WGPUBackendType_Undefined
             (setf (foreign-slot-value adapter-options '(:struct wgpu-request-adapter-options) 'compatible-surface)
                   (null-pointer))
-            
+
             (with-foreign-object (out-adapter 'wgpu-adapter)
               (let ((status (wgpu-shim-instance-request-adapter-sync instance adapter-options out-adapter)))
                 (foreign-free adapter-options)
@@ -149,7 +142,7 @@ fn main() -> @location(0) vec4<f32> {
                   (error "Failed to request adapter: status=~a" status))
                 (setf adapter (mem-ref out-adapter 'wgpu-adapter))
                 (format t "Adapter obtained~%"))))
-          
+
           ;; --- Request device ---
           (let ((device-desc (foreign-alloc '(:struct wgpu-device-descriptor))))
             (setf (foreign-slot-value device-desc '(:struct wgpu-device-descriptor) 'next-in-chain)
@@ -179,7 +172,7 @@ fn main() -> @location(0) vec4<f32> {
                     (%get-silent-uncaptured-error-callback))
               (setf (foreign-slot-value cb-ptr '(:struct wgpu-uncaptured-error-callback-info) 'userdata1) (null-pointer))
               (setf (foreign-slot-value cb-ptr '(:struct wgpu-uncaptured-error-callback-info) 'userdata2) (null-pointer)))
-            
+
             (with-foreign-object (out-device 'wgpu-device)
               (let ((status (wgpu-shim-adapter-request-device-sync instance adapter device-desc out-device)))
                 (foreign-free device-desc)
@@ -187,13 +180,13 @@ fn main() -> @location(0) vec4<f32> {
                   (error "Failed to request device: status=~a" status))
                 (setf device (mem-ref out-device 'wgpu-device))
                 (format t "Device obtained~%"))))
-          
+
           ;; --- Create surface ---
-          (setf surface (glfw-create-window-wgpu-surface instance window))
+          (setf surface (cl-webgpu/glfw:glfw-create-window-wgpu-surface instance window))
           (when (null-pointer-p surface)
             (error "Failed to create surface"))
           (format t "Surface created~%")
-          
+
           ;; --- Get surface capabilities ---
           (let ((capabilities (foreign-alloc '(:struct wgpu-surface-capabilities))))
             (wgpu-surface-get-capabilities surface adapter capabilities)
@@ -205,22 +198,22 @@ fn main() -> @location(0) vec4<f32> {
               (format t "Surface format: ~a (~a formats available)~%" surface-format format-count)
               (wgpu-shim-surface-capabilities-free-members capabilities)
               (foreign-free capabilities)
-              
+
               ;; --- Create shader modules ---
               (let ((vertex-shader (create-shader-module device *vertex-shader-wgsl* "Vertex Shader"))
                     (fragment-shader (create-shader-module device *fragment-shader-wgsl* "Fragment Shader")))
-                
+
                 ;; --- Create render pipeline ---
                 (let ((pipeline-desc (foreign-alloc '(:struct wgpu-render-pipeline-descriptor)))
                       (entry-point-ptr (foreign-string-alloc "main")))
-                  
+
                   ;; Initialize pipeline descriptor
                   (setf (foreign-slot-value pipeline-desc '(:struct wgpu-render-pipeline-descriptor) 'next-in-chain)
                         (null-pointer))
                   (set-string-view (foreign-slot-pointer pipeline-desc '(:struct wgpu-render-pipeline-descriptor) 'label) nil)
                   (setf (foreign-slot-value pipeline-desc '(:struct wgpu-render-pipeline-descriptor) 'layout)
                         (null-pointer))
-                  
+
                   ;; Vertex state (inline in descriptor)
                   (let ((vertex-ptr (foreign-slot-pointer pipeline-desc '(:struct wgpu-render-pipeline-descriptor) 'vertex)))
                     (setf (foreign-slot-value vertex-ptr '(:struct wgpu-vertex-state) 'next-in-chain) (null-pointer))
@@ -232,7 +225,7 @@ fn main() -> @location(0) vec4<f32> {
                     (setf (foreign-slot-value vertex-ptr '(:struct wgpu-vertex-state) 'constants) (null-pointer))
                     (setf (foreign-slot-value vertex-ptr '(:struct wgpu-vertex-state) 'buffer-count) 0)
                     (setf (foreign-slot-value vertex-ptr '(:struct wgpu-vertex-state) 'buffers) (null-pointer)))
-                  
+
                   ;; Primitive state (inline in descriptor)
                   (let ((prim-ptr (foreign-slot-pointer pipeline-desc '(:struct wgpu-render-pipeline-descriptor) 'primitive)))
                     (setf (foreign-slot-value prim-ptr '(:struct wgpu-primitive-state) 'next-in-chain) (null-pointer))
@@ -241,28 +234,28 @@ fn main() -> @location(0) vec4<f32> {
                     (setf (foreign-slot-value prim-ptr '(:struct wgpu-primitive-state) 'front-face) :ccw)
                     (setf (foreign-slot-value prim-ptr '(:struct wgpu-primitive-state) 'cull-mode) :none)
                     (setf (foreign-slot-value prim-ptr '(:struct wgpu-primitive-state) 'unclipped-depth) 0))
-                  
+
                   ;; Depth/stencil (null)
                   (setf (foreign-slot-value pipeline-desc '(:struct wgpu-render-pipeline-descriptor) 'depth-stencil)
                         (null-pointer))
-                  
+
                   ;; Multisample state (inline in descriptor)
                   (let ((ms-ptr (foreign-slot-pointer pipeline-desc '(:struct wgpu-render-pipeline-descriptor) 'multisample)))
                     (setf (foreign-slot-value ms-ptr '(:struct wgpu-multisample-state) 'next-in-chain) (null-pointer))
                     (setf (foreign-slot-value ms-ptr '(:struct wgpu-multisample-state) 'count) 1)
                     (setf (foreign-slot-value ms-ptr '(:struct wgpu-multisample-state) 'mask) #xFFFFFFFF)
                     (setf (foreign-slot-value ms-ptr '(:struct wgpu-multisample-state) 'alpha-to-coverage-enabled) 0))
-                  
+
                   ;; Fragment state (separate allocation)
                   (let ((fragment-state (foreign-alloc '(:struct wgpu-fragment-state)))
                         (color-target (foreign-alloc '(:struct wgpu-color-target-state))))
-                    
+
                     ;; Color target
                     (setf (foreign-slot-value color-target '(:struct wgpu-color-target-state) 'next-in-chain) (null-pointer))
                     (setf (foreign-slot-value color-target '(:struct wgpu-color-target-state) 'format) surface-format)
                     (setf (foreign-slot-value color-target '(:struct wgpu-color-target-state) 'blend) (null-pointer))
                     (setf (foreign-slot-value color-target '(:struct wgpu-color-target-state) 'write-mask) #xF)
-                    
+
                     ;; Fragment state
                     (setf (foreign-slot-value fragment-state '(:struct wgpu-fragment-state) 'next-in-chain) (null-pointer))
                     (setf (foreign-slot-value fragment-state '(:struct wgpu-fragment-state) 'module) fragment-shader)
@@ -273,14 +266,14 @@ fn main() -> @location(0) vec4<f32> {
                     (setf (foreign-slot-value fragment-state '(:struct wgpu-fragment-state) 'constants) (null-pointer))
                     (setf (foreign-slot-value fragment-state '(:struct wgpu-fragment-state) 'target-count) 1)
                     (setf (foreign-slot-value fragment-state '(:struct wgpu-fragment-state) 'targets) color-target)
-                    
+
                     (setf (foreign-slot-value pipeline-desc '(:struct wgpu-render-pipeline-descriptor) 'fragment)
                           fragment-state)
-                    
+
                       (setf pipeline (wgpu-device-create-render-pipeline device pipeline-desc))
                       (when (null-pointer-p pipeline)
                         (error "Pipeline creation returned null"))
-                    
+
                     ;; Configure surface
                     (let ((config (foreign-alloc '(:struct wgpu-surface-configuration))))
                       (setf (foreign-slot-value config '(:struct wgpu-surface-configuration) 'next-in-chain) (null-pointer))
@@ -297,13 +290,13 @@ fn main() -> @location(0) vec4<f32> {
                       (wgpu-surface-configure surface config)
                       (foreign-free config)
                       (format t "Surface configured~%"))
-                    
+
                     ;; --- Render loop ---
                     (format t "Starting render loop (close window to exit)...~%")
-                    (loop while (zerop (glfw-window-should-close window))
+                    (loop while (not (cl-glfw3:window-should-close-p window))
                           do (progn
-                               (glfw-poll-events)
-                               
+                               (cl-glfw3:poll-events)
+
                                 ;; Get current texture
                                 (with-foreign-object (surface-texture '(:struct wgpu-surface-texture))
                                   (wgpu-surface-get-current-texture surface surface-texture)
@@ -326,7 +319,7 @@ fn main() -> @location(0) vec4<f32> {
                                        (setf (foreign-slot-value texture-view-desc '(:struct wgpu-texture-view-descriptor) 'usage) 0)
                                        (setf texture-view (wgpu-texture-create-view texture texture-view-desc))
                                        (foreign-free texture-view-desc)
-                                       
+
                                        ;; Create command encoder
                                        (let* ((encoder-desc (foreign-alloc '(:struct wgpu-command-encoder-descriptor)))
                                               (encoder nil))
@@ -334,11 +327,11 @@ fn main() -> @location(0) vec4<f32> {
                                           (set-string-view (foreign-slot-pointer encoder-desc '(:struct wgpu-command-encoder-descriptor) 'label) nil)
                                          (setf encoder (wgpu-device-create-command-encoder device encoder-desc))
                                          (foreign-free encoder-desc)
-                                         
+
                                          ;; Begin render pass
                                          (let* ((render-pass-desc (foreign-alloc '(:struct wgpu-render-pass-descriptor)))
                                                 (color-attachment (foreign-alloc '(:struct wgpu-render-pass-color-attachment))))
-                                           
+
                                            ;; Color attachment
                                            (setf (foreign-slot-value color-attachment '(:struct wgpu-render-pass-color-attachment) 'next-in-chain) (null-pointer))
                                            (setf (foreign-slot-value color-attachment '(:struct wgpu-render-pass-color-attachment) 'view) texture-view)
@@ -351,7 +344,7 @@ fn main() -> @location(0) vec4<f32> {
                                              (setf (foreign-slot-value clear-color-ptr '(:struct wgpu-color) 'g) 0.1d0)
                                              (setf (foreign-slot-value clear-color-ptr '(:struct wgpu-color) 'b) 0.3d0)
                                              (setf (foreign-slot-value clear-color-ptr '(:struct wgpu-color) 'a) 1.0d0))
-                                           
+
                                            ;; Render pass descriptor
                                            (setf (foreign-slot-value render-pass-desc '(:struct wgpu-render-pass-descriptor) 'next-in-chain) (null-pointer))
                                             (set-string-view (foreign-slot-pointer render-pass-desc '(:struct wgpu-render-pass-descriptor) 'label) nil)
@@ -360,16 +353,16 @@ fn main() -> @location(0) vec4<f32> {
                                            (setf (foreign-slot-value render-pass-desc '(:struct wgpu-render-pass-descriptor) 'depth-stencil-attachment) (null-pointer))
                                            (setf (foreign-slot-value render-pass-desc '(:struct wgpu-render-pass-descriptor) 'occlusion-query-set) (null-pointer))
                                            (setf (foreign-slot-value render-pass-desc '(:struct wgpu-render-pass-descriptor) 'timestamp-writes) (null-pointer))
-                                           
+
                                             (let ((render-pass (wgpu-command-encoder-begin-render-pass encoder render-pass-desc)))
                                               (wgpu-render-pass-encoder-set-pipeline render-pass pipeline)
                                               (wgpu-render-pass-encoder-draw render-pass 3 1 0 0)
                                               (wgpu-render-pass-encoder-end render-pass)
                                               (wgpu-render-pass-encoder-release render-pass))
-                                           
+
                                            (foreign-free render-pass-desc)
                                            (foreign-free color-attachment)
-                                           
+
                                            ;; Finish encoding and submit
                                            (let* ((cmd-buffer-desc (foreign-alloc '(:struct wgpu-command-buffer-descriptor)))
                                                   (cmd-buffer nil))
@@ -377,18 +370,18 @@ fn main() -> @location(0) vec4<f32> {
                                               (set-string-view (foreign-slot-pointer cmd-buffer-desc '(:struct wgpu-command-buffer-descriptor) 'label) nil)
                                              (setf cmd-buffer (wgpu-command-encoder-finish encoder cmd-buffer-desc))
                                              (foreign-free cmd-buffer-desc)
-                                             
+
                                              (let ((queue (wgpu-device-get-queue device)))
                                                (with-foreign-object (buffers 'wgpu-command-buffer 1)
                                                  (setf (mem-aref buffers 'wgpu-command-buffer 0) cmd-buffer)
                                                  (wgpu-queue-submit queue 1 buffers))
                                                (wgpu-command-buffer-release cmd-buffer))
-                                             
+
                                              ;; Present
                                              (wgpu-surface-present surface)
-                                             
+
                                              (wgpu-command-encoder-release encoder))
-                                           
+
                                            (wgpu-texture-view-release texture-view)))))))
 
                                ;; Small delay
@@ -403,7 +396,7 @@ fn main() -> @location(0) vec4<f32> {
                     (wgpu-render-pipeline-release pipeline)
                     (wgpu-shader-module-release vertex-shader)
                     (wgpu-shader-module-release fragment-shader))
-          
+
           ;; --- Cleanup ---
           (format t "Cleaning up...~%")
           (wgpu-surface-unconfigure surface)
@@ -411,10 +404,10 @@ fn main() -> @location(0) vec4<f32> {
           (wgpu-device-release device)
           (wgpu-adapter-release adapter)
           (wgpu-instance-release instance))
-      
+
       ;; Always cleanup GLFW
-      (glfw-destroy-window window)
-      (glfw-terminate)
+      (cl-glfw3:destroy-window window)
+      (cl-glfw3:terminate)
       (format t "Done.~%"))))))))
 
 ;; Run the example

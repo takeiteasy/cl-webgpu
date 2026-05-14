@@ -2,7 +2,7 @@
 ;;;; Parses webgpu.h and wgpu.h C headers into structured data.
 ;;;; Uses batch cl-ppcre scanning (one pass per construct type) for performance.
 
-(in-package #:cl-webgpu-codegen)
+(in-package #:cl-webgpu/codegen)
 
 ;;; Parse context
 
