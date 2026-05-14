@@ -5,6 +5,7 @@
 (defpackage #:cl-webgpu
   (:use #:cl #:cffi)
   (:export
+   #:%get-silent-uncaptured-error-callback
    #:+wgpu-buffer-usage-copy-dst+
    #:+wgpu-buffer-usage-copy-src+
    #:+wgpu-buffer-usage-index+
@@ -46,7 +47,9 @@
    #:wgpu-adapter-get-limits
    #:wgpu-adapter-has-feature
    #:wgpu-adapter-info
+   #:wgpu-adapter-info-free-members
    #:wgpu-adapter-release
+   #:wgpu-adapter-request-device
    #:wgpu-adapter-type
    #:wgpu-address-mode
    #:wgpu-backend-type
@@ -61,7 +64,9 @@
    #:wgpu-bind-group-layout-entry
    #:wgpu-bind-group-layout-entry-extras
    #:wgpu-bind-group-layout-release
+   #:wgpu-bind-group-layout-set-label
    #:wgpu-bind-group-release
+   #:wgpu-bind-group-set-label
    #:wgpu-blend-component
    #:wgpu-blend-factor
    #:wgpu-blend-operation
@@ -78,10 +83,12 @@
    #:wgpu-buffer-get-mapped-range
    #:wgpu-buffer-get-size
    #:wgpu-buffer-get-usage
+   #:wgpu-buffer-map-async
    #:wgpu-buffer-map-callback-info
    #:wgpu-buffer-map-state
    #:wgpu-buffer-read-mapped-range
    #:wgpu-buffer-release
+   #:wgpu-buffer-set-label
    #:wgpu-buffer-unmap
    #:wgpu-buffer-usage
    #:wgpu-buffer-write-mapped-range
@@ -94,6 +101,7 @@
    #:wgpu-command-buffer-add-ref
    #:wgpu-command-buffer-descriptor
    #:wgpu-command-buffer-release
+   #:wgpu-command-buffer-set-label
    #:wgpu-command-encoder
    #:wgpu-command-encoder-add-ref
    #:wgpu-command-encoder-begin-compute-pass
@@ -106,9 +114,12 @@
    #:wgpu-command-encoder-copy-texture-to-texture
    #:wgpu-command-encoder-descriptor
    #:wgpu-command-encoder-finish
+   #:wgpu-command-encoder-insert-debug-marker
    #:wgpu-command-encoder-pop-debug-group
+   #:wgpu-command-encoder-push-debug-group
    #:wgpu-command-encoder-release
    #:wgpu-command-encoder-resolve-query-set
+   #:wgpu-command-encoder-set-label
    #:wgpu-command-encoder-write-timestamp
    #:wgpu-compare-function
    #:wgpu-compatibility-mode-limits
@@ -127,10 +138,13 @@
    #:wgpu-compute-pass-encoder-dispatch-workgroups-indirect
    #:wgpu-compute-pass-encoder-end
    #:wgpu-compute-pass-encoder-end-pipeline-statistics-query
+   #:wgpu-compute-pass-encoder-insert-debug-marker
    #:wgpu-compute-pass-encoder-pop-debug-group
+   #:wgpu-compute-pass-encoder-push-debug-group
    #:wgpu-compute-pass-encoder-release
    #:wgpu-compute-pass-encoder-set-bind-group
    #:wgpu-compute-pass-encoder-set-immediates
+   #:wgpu-compute-pass-encoder-set-label
    #:wgpu-compute-pass-encoder-set-pipeline
    #:wgpu-compute-pass-encoder-write-timestamp
    #:wgpu-compute-pipeline
@@ -138,6 +152,7 @@
    #:wgpu-compute-pipeline-descriptor
    #:wgpu-compute-pipeline-get-bind-group-layout
    #:wgpu-compute-pipeline-release
+   #:wgpu-compute-pipeline-set-label
    #:wgpu-compute-state
    #:wgpu-constant-entry
    #:wgpu-create-compute-pipeline-async-callback-info
@@ -153,10 +168,12 @@
    #:wgpu-device-create-buffer
    #:wgpu-device-create-command-encoder
    #:wgpu-device-create-compute-pipeline
+   #:wgpu-device-create-compute-pipeline-async
    #:wgpu-device-create-pipeline-layout
    #:wgpu-device-create-query-set
    #:wgpu-device-create-render-bundle-encoder
    #:wgpu-device-create-render-pipeline
+   #:wgpu-device-create-render-pipeline-async
    #:wgpu-device-create-sampler
    #:wgpu-device-create-shader-module
    #:wgpu-device-create-shader-module-spir-v
@@ -173,8 +190,10 @@
    #:wgpu-device-lost-callback-info
    #:wgpu-device-lost-reason
    #:wgpu-device-poll
+   #:wgpu-device-pop-error-scope
    #:wgpu-device-push-error-scope
    #:wgpu-device-release
+   #:wgpu-device-set-label
    #:wgpu-device-start-graphics-debugger-capture
    #:wgpu-device-stop-graphics-debugger-capture
    #:wgpu-dx12-compiler
@@ -188,6 +207,7 @@
    #:wgpu-external-texture-binding-entry
    #:wgpu-external-texture-binding-layout
    #:wgpu-external-texture-release
+   #:wgpu-external-texture-set-label
    #:wgpu-feature-level
    #:wgpu-feature-name
    #:wgpu-filter-mode
@@ -199,6 +219,7 @@
    #:wgpu-generate-report
    #:wgpu-get-instance-features
    #:wgpu-get-instance-limits
+   #:wgpu-get-proc-address
    #:wgpu-get-version
    #:wgpu-gl-fence-behaviour
    #:wgpu-gles3-minor-version
@@ -222,6 +243,7 @@
    #:wgpu-instance-limits
    #:wgpu-instance-process-events
    #:wgpu-instance-release
+   #:wgpu-instance-request-adapter
    #:wgpu-instance-wait-any
    #:wgpu-limits
    #:wgpu-load-op
@@ -246,6 +268,7 @@
    #:wgpu-pipeline-layout-descriptor
    #:wgpu-pipeline-layout-extras
    #:wgpu-pipeline-layout-release
+   #:wgpu-pipeline-layout-set-label
    #:wgpu-pipeline-statistic-name
    #:wgpu-polygon-mode
    #:wgpu-pop-error-scope-callback-info
@@ -265,13 +288,16 @@
    #:wgpu-query-set-get-count
    #:wgpu-query-set-get-type
    #:wgpu-query-set-release
+   #:wgpu-query-set-set-label
    #:wgpu-query-type
    #:wgpu-queue
    #:wgpu-queue-add-ref
    #:wgpu-queue-descriptor
    #:wgpu-queue-get-native-metal-command-queue
    #:wgpu-queue-get-timestamp-period
+   #:wgpu-queue-on-submitted-work-done
    #:wgpu-queue-release
+   #:wgpu-queue-set-label
    #:wgpu-queue-submit
    #:wgpu-queue-submit-for-index
    #:wgpu-queue-work-done-callback-info
@@ -290,14 +316,18 @@
    #:wgpu-render-bundle-encoder-draw-indexed-indirect
    #:wgpu-render-bundle-encoder-draw-indirect
    #:wgpu-render-bundle-encoder-finish
+   #:wgpu-render-bundle-encoder-insert-debug-marker
    #:wgpu-render-bundle-encoder-pop-debug-group
+   #:wgpu-render-bundle-encoder-push-debug-group
    #:wgpu-render-bundle-encoder-release
    #:wgpu-render-bundle-encoder-set-bind-group
    #:wgpu-render-bundle-encoder-set-immediates
    #:wgpu-render-bundle-encoder-set-index-buffer
+   #:wgpu-render-bundle-encoder-set-label
    #:wgpu-render-bundle-encoder-set-pipeline
    #:wgpu-render-bundle-encoder-set-vertex-buffer
    #:wgpu-render-bundle-release
+   #:wgpu-render-bundle-set-label
    #:wgpu-render-pass-color-attachment
    #:wgpu-render-pass-depth-stencil-attachment
    #:wgpu-render-pass-descriptor
@@ -313,16 +343,19 @@
    #:wgpu-render-pass-encoder-end-occlusion-query
    #:wgpu-render-pass-encoder-end-pipeline-statistics-query
    #:wgpu-render-pass-encoder-execute-bundles
+   #:wgpu-render-pass-encoder-insert-debug-marker
    #:wgpu-render-pass-encoder-multi-draw-indexed-indirect
    #:wgpu-render-pass-encoder-multi-draw-indexed-indirect-count
    #:wgpu-render-pass-encoder-multi-draw-indirect
    #:wgpu-render-pass-encoder-multi-draw-indirect-count
    #:wgpu-render-pass-encoder-pop-debug-group
+   #:wgpu-render-pass-encoder-push-debug-group
    #:wgpu-render-pass-encoder-release
    #:wgpu-render-pass-encoder-set-bind-group
    #:wgpu-render-pass-encoder-set-blend-constant
    #:wgpu-render-pass-encoder-set-immediates
    #:wgpu-render-pass-encoder-set-index-buffer
+   #:wgpu-render-pass-encoder-set-label
    #:wgpu-render-pass-encoder-set-pipeline
    #:wgpu-render-pass-encoder-set-scissor-rect
    #:wgpu-render-pass-encoder-set-stencil-reference
@@ -335,6 +368,7 @@
    #:wgpu-render-pipeline-descriptor
    #:wgpu-render-pipeline-get-bind-group-layout
    #:wgpu-render-pipeline-release
+   #:wgpu-render-pipeline-set-label
    #:wgpu-request-adapter-callback-info
    #:wgpu-request-adapter-options
    #:wgpu-request-adapter-status
@@ -348,6 +382,7 @@
    #:wgpu-sampler-binding-type
    #:wgpu-sampler-descriptor
    #:wgpu-sampler-release
+   #:wgpu-sampler-set-label
    #:wgpu-set-log-callback
    #:wgpu-set-log-level
    #:wgpu-shader-define
@@ -355,12 +390,60 @@
    #:wgpu-shader-module-add-ref
    #:wgpu-shader-module-descriptor
    #:wgpu-shader-module-descriptor-spir-v
+   #:wgpu-shader-module-get-compilation-info
    #:wgpu-shader-module-release
+   #:wgpu-shader-module-set-label
    #:wgpu-shader-source-glsl
    #:wgpu-shader-source-spirv
    #:wgpu-shader-source-wgsl
    #:wgpu-shader-stage
+   #:wgpu-shim-adapter-info-free-members
+   #:wgpu-shim-adapter-request-device
+   #:wgpu-shim-adapter-request-device-sync
+   #:wgpu-shim-bind-group-layout-set-label
+   #:wgpu-shim-bind-group-set-label
+   #:wgpu-shim-buffer-map-async
+   #:wgpu-shim-buffer-set-label
+   #:wgpu-shim-command-buffer-set-label
+   #:wgpu-shim-command-encoder-insert-debug-marker
+   #:wgpu-shim-command-encoder-push-debug-group
+   #:wgpu-shim-command-encoder-set-label
+   #:wgpu-shim-compute-pass-encoder-insert-debug-marker
+   #:wgpu-shim-compute-pass-encoder-push-debug-group
+   #:wgpu-shim-compute-pass-encoder-set-label
+   #:wgpu-shim-compute-pipeline-set-label
+   #:wgpu-shim-device-create-compute-pipeline-async
+   #:wgpu-shim-device-create-render-pipeline-async
+   #:wgpu-shim-device-pop-error-scope
+   #:wgpu-shim-device-set-label
+   #:wgpu-shim-external-texture-set-label
+   #:wgpu-shim-get-proc-address
+   #:wgpu-shim-instance-request-adapter
+   #:wgpu-shim-instance-request-adapter-sync
    #:wgpu-shim-make-string-view
+   #:wgpu-shim-pipeline-layout-set-label
+   #:wgpu-shim-query-set-set-label
+   #:wgpu-shim-queue-on-submitted-work-done
+   #:wgpu-shim-queue-set-label
+   #:wgpu-shim-render-bundle-encoder-insert-debug-marker
+   #:wgpu-shim-render-bundle-encoder-push-debug-group
+   #:wgpu-shim-render-bundle-encoder-set-label
+   #:wgpu-shim-render-bundle-set-label
+   #:wgpu-shim-render-pass-encoder-insert-debug-marker
+   #:wgpu-shim-render-pass-encoder-push-debug-group
+   #:wgpu-shim-render-pass-encoder-set-label
+   #:wgpu-shim-render-pipeline-set-label
+   #:wgpu-shim-sampler-set-label
+   #:wgpu-shim-set-log-callback
+   #:wgpu-shim-shader-module-get-compilation-info
+   #:wgpu-shim-shader-module-set-label
+   #:wgpu-shim-supported-features-free-members
+   #:wgpu-shim-supported-instance-features-free-members
+   #:wgpu-shim-supported-wgsl-language-features-free-members
+   #:wgpu-shim-surface-capabilities-free-members
+   #:wgpu-shim-surface-set-label
+   #:wgpu-shim-texture-set-label
+   #:wgpu-shim-texture-view-set-label
    #:wgpu-status
    #:wgpu-stencil-face-state
    #:wgpu-stencil-operation
@@ -369,11 +452,15 @@
    #:wgpu-store-op
    #:wgpu-string-view
    #:wgpu-supported-features
+   #:wgpu-supported-features-free-members
    #:wgpu-supported-instance-features
+   #:wgpu-supported-instance-features-free-members
    #:wgpu-supported-wgsl-language-features
+   #:wgpu-supported-wgsl-language-features-free-members
    #:wgpu-surface
    #:wgpu-surface-add-ref
    #:wgpu-surface-capabilities
+   #:wgpu-surface-capabilities-free-members
    #:wgpu-surface-color-management
    #:wgpu-surface-configuration
    #:wgpu-surface-configuration-extras
@@ -384,6 +471,7 @@
    #:wgpu-surface-get-current-texture-status
    #:wgpu-surface-present
    #:wgpu-surface-release
+   #:wgpu-surface-set-label
    #:wgpu-surface-source-android-native-window
    #:wgpu-surface-source-metal-layer
    #:wgpu-surface-source-swap-chain-panel
@@ -420,12 +508,14 @@
    #:wgpu-texture-get-width
    #:wgpu-texture-release
    #:wgpu-texture-sample-type
+   #:wgpu-texture-set-label
    #:wgpu-texture-usage
    #:wgpu-texture-view
    #:wgpu-texture-view-add-ref
    #:wgpu-texture-view-descriptor
    #:wgpu-texture-view-dimension
    #:wgpu-texture-view-release
+   #:wgpu-texture-view-set-label
    #:wgpu-tone-mapping-mode
    #:wgpu-uncaptured-error-callback-info
    #:wgpu-vertex-attribute

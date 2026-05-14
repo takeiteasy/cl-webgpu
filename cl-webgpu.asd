@@ -9,6 +9,8 @@
   :depends-on (#:cffi)
   :components ((:module "src"
                 :components
+                ;; All files except library.lisp are AUTO-GENERATED.
+                ;; Run (cl-webgpu-codegen:generate) to regenerate.
                 ((:file "package")
                  (:file "library")
                  (:file "types")

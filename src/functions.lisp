@@ -4,131 +4,309 @@
 
 (in-package #:cl-webgpu)
 
+#-(ecl)
 (defcfun ("wgpuCreateInstance" wgpu-create-instance) wgpu-instance
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuCreateInstance" wgpu-create-instance)
+    ((descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuGetInstanceFeatures" wgpu-get-instance-features) :void
   (features :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuGetInstanceFeatures" wgpu-get-instance-features)
+    ((features :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuGetInstanceLimits" wgpu-get-instance-limits) wgpu-status
   (limits :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuGetInstanceLimits" wgpu-get-instance-limits)
+    ((limits :pointer-void))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuHasInstanceFeature" wgpu-has-instance-feature) wgpu-bool
   (feature wgpu-instance-feature-name))
+#+(ecl)
+(ffi:def-function ("wgpuHasInstanceFeature" wgpu-has-instance-feature)
+    ((feature :int))
+  :result-type :uint32-t :language :c)
 
-;; NOTE: wgpu-get-proc-address skipped (param procName is WGPUStringView by value) - use shim
+(defun wgpu-get-proc-address (proc-name-data proc-name-length)
+  (wgpu-shim-get-proc-address proc-name-data proc-name-length))
 
+#-(ecl)
 (defcfun ("wgpuAdapterGetFeatures" wgpu-adapter-get-features) :void
   (adapter wgpu-adapter)
   (features :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuAdapterGetFeatures" wgpu-adapter-get-features)
+    ((adapter :pointer-void)
+     (features :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuAdapterGetInfo" wgpu-adapter-get-info) wgpu-status
   (adapter wgpu-adapter)
   (info :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuAdapterGetInfo" wgpu-adapter-get-info)
+    ((adapter :pointer-void)
+     (info :pointer-void))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuAdapterGetLimits" wgpu-adapter-get-limits) wgpu-status
   (adapter wgpu-adapter)
   (limits :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuAdapterGetLimits" wgpu-adapter-get-limits)
+    ((adapter :pointer-void)
+     (limits :pointer-void))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuAdapterHasFeature" wgpu-adapter-has-feature) wgpu-bool
   (adapter wgpu-adapter)
   (feature wgpu-feature-name))
+#+(ecl)
+(ffi:def-function ("wgpuAdapterHasFeature" wgpu-adapter-has-feature)
+    ((adapter :pointer-void)
+     (feature :int))
+  :result-type :uint32-t :language :c)
 
-;; NOTE: wgpu-adapter-request-device skipped (returns WGPUFuture by value) - use shim
+(defun wgpu-adapter-request-device (adapter descriptor next-in-chain callback-mode callback userdata1 userdata2 out-future)
+  (wgpu-shim-adapter-request-device adapter descriptor next-in-chain callback-mode callback userdata1 userdata2 out-future))
 
+#-(ecl)
 (defcfun ("wgpuAdapterAddRef" wgpu-adapter-add-ref) :void
   (adapter wgpu-adapter))
+#+(ecl)
+(ffi:def-function ("wgpuAdapterAddRef" wgpu-adapter-add-ref)
+    ((adapter :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuAdapterRelease" wgpu-adapter-release) :void
   (adapter wgpu-adapter))
+#+(ecl)
+(ffi:def-function ("wgpuAdapterRelease" wgpu-adapter-release)
+    ((adapter :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-adapter-info-free-members skipped (param adapterInfo is WGPUAdapterInfo by value) - use shim
+(defun wgpu-adapter-info-free-members (info)
+  (wgpu-shim-adapter-info-free-members info))
 
-;; NOTE: wgpu-bind-group-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-bind-group-set-label (bind-group data length)
+  (wgpu-shim-bind-group-set-label bind-group data length))
 
+#-(ecl)
 (defcfun ("wgpuBindGroupAddRef" wgpu-bind-group-add-ref) :void
   (bind-group wgpu-bind-group))
+#+(ecl)
+(ffi:def-function ("wgpuBindGroupAddRef" wgpu-bind-group-add-ref)
+    ((bind-group :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBindGroupRelease" wgpu-bind-group-release) :void
   (bind-group wgpu-bind-group))
+#+(ecl)
+(ffi:def-function ("wgpuBindGroupRelease" wgpu-bind-group-release)
+    ((bind-group :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-bind-group-layout-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-bind-group-layout-set-label (bind-group-layout data length)
+  (wgpu-shim-bind-group-layout-set-label bind-group-layout data length))
 
+#-(ecl)
 (defcfun ("wgpuBindGroupLayoutAddRef" wgpu-bind-group-layout-add-ref) :void
   (bind-group-layout wgpu-bind-group-layout))
+#+(ecl)
+(ffi:def-function ("wgpuBindGroupLayoutAddRef" wgpu-bind-group-layout-add-ref)
+    ((bind-group-layout :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBindGroupLayoutRelease" wgpu-bind-group-layout-release) :void
   (bind-group-layout wgpu-bind-group-layout))
+#+(ecl)
+(ffi:def-function ("wgpuBindGroupLayoutRelease" wgpu-bind-group-layout-release)
+    ((bind-group-layout :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBufferDestroy" wgpu-buffer-destroy) :void
   (buffer wgpu-buffer))
+#+(ecl)
+(ffi:def-function ("wgpuBufferDestroy" wgpu-buffer-destroy)
+    ((buffer :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBufferGetConstMappedRange" wgpu-buffer-get-const-mapped-range) :pointer
   (buffer wgpu-buffer)
   (offset :size)
   (size :size))
+#+(ecl)
+(ffi:def-function ("wgpuBufferGetConstMappedRange" wgpu-buffer-get-const-mapped-range)
+    ((buffer :pointer-void)
+     (offset :cl-index)
+     (size :cl-index))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBufferGetMappedRange" wgpu-buffer-get-mapped-range) :pointer
   (buffer wgpu-buffer)
   (offset :size)
   (size :size))
+#+(ecl)
+(ffi:def-function ("wgpuBufferGetMappedRange" wgpu-buffer-get-mapped-range)
+    ((buffer :pointer-void)
+     (offset :cl-index)
+     (size :cl-index))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBufferGetMapState" wgpu-buffer-get-map-state) wgpu-buffer-map-state
   (buffer wgpu-buffer))
+#+(ecl)
+(ffi:def-function ("wgpuBufferGetMapState" wgpu-buffer-get-map-state)
+    ((buffer :pointer-void))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBufferGetSize" wgpu-buffer-get-size) :uint64
   (buffer wgpu-buffer))
+#+(ecl)
+(ffi:def-function ("wgpuBufferGetSize" wgpu-buffer-get-size)
+    ((buffer :pointer-void))
+  :result-type :uint64-t :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBufferGetUsage" wgpu-buffer-get-usage) wgpu-flags
   (buffer wgpu-buffer))
+#+(ecl)
+(ffi:def-function ("wgpuBufferGetUsage" wgpu-buffer-get-usage)
+    ((buffer :pointer-void))
+  :result-type :int :language :c)
 
-;; NOTE: wgpu-buffer-map-async skipped (returns WGPUFuture by value) - use shim
+(defun wgpu-buffer-map-async (buffer mode offset size next-in-chain callback-mode callback userdata1 userdata2 out-future)
+  (wgpu-shim-buffer-map-async buffer mode offset size next-in-chain callback-mode callback userdata1 userdata2 out-future))
 
+#-(ecl)
 (defcfun ("wgpuBufferReadMappedRange" wgpu-buffer-read-mapped-range) wgpu-status
   (buffer wgpu-buffer)
   (offset :size)
   (data :pointer)
   (size :size))
+#+(ecl)
+(ffi:def-function ("wgpuBufferReadMappedRange" wgpu-buffer-read-mapped-range)
+    ((buffer :pointer-void)
+     (offset :cl-index)
+     (data :pointer-void)
+     (size :cl-index))
+  :result-type :int :language :c)
 
-;; NOTE: wgpu-buffer-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-buffer-set-label (buffer data length)
+  (wgpu-shim-buffer-set-label buffer data length))
 
+#-(ecl)
 (defcfun ("wgpuBufferUnmap" wgpu-buffer-unmap) :void
   (buffer wgpu-buffer))
+#+(ecl)
+(ffi:def-function ("wgpuBufferUnmap" wgpu-buffer-unmap)
+    ((buffer :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBufferWriteMappedRange" wgpu-buffer-write-mapped-range) wgpu-status
   (buffer wgpu-buffer)
   (offset :size)
   (data :pointer)
   (size :size))
+#+(ecl)
+(ffi:def-function ("wgpuBufferWriteMappedRange" wgpu-buffer-write-mapped-range)
+    ((buffer :pointer-void)
+     (offset :cl-index)
+     (data :pointer-void)
+     (size :cl-index))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBufferAddRef" wgpu-buffer-add-ref) :void
   (buffer wgpu-buffer))
+#+(ecl)
+(ffi:def-function ("wgpuBufferAddRef" wgpu-buffer-add-ref)
+    ((buffer :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuBufferRelease" wgpu-buffer-release) :void
   (buffer wgpu-buffer))
+#+(ecl)
+(ffi:def-function ("wgpuBufferRelease" wgpu-buffer-release)
+    ((buffer :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-command-buffer-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-command-buffer-set-label (command-buffer data length)
+  (wgpu-shim-command-buffer-set-label command-buffer data length))
 
+#-(ecl)
 (defcfun ("wgpuCommandBufferAddRef" wgpu-command-buffer-add-ref) :void
   (command-buffer wgpu-command-buffer))
+#+(ecl)
+(ffi:def-function ("wgpuCommandBufferAddRef" wgpu-command-buffer-add-ref)
+    ((command-buffer :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandBufferRelease" wgpu-command-buffer-release) :void
   (command-buffer wgpu-command-buffer))
+#+(ecl)
+(ffi:def-function ("wgpuCommandBufferRelease" wgpu-command-buffer-release)
+    ((command-buffer :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderBeginComputePass" wgpu-command-encoder-begin-compute-pass) wgpu-compute-pass-encoder
   (command-encoder wgpu-command-encoder)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderBeginComputePass" wgpu-command-encoder-begin-compute-pass)
+    ((command-encoder :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderBeginRenderPass" wgpu-command-encoder-begin-render-pass) wgpu-render-pass-encoder
   (command-encoder wgpu-command-encoder)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderBeginRenderPass" wgpu-command-encoder-begin-render-pass)
+    ((command-encoder :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderClearBuffer" wgpu-command-encoder-clear-buffer) :void
   (command-encoder wgpu-command-encoder)
   (buffer wgpu-buffer)
   (offset :uint64)
   (size :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderClearBuffer" wgpu-command-encoder-clear-buffer)
+    ((command-encoder :pointer-void)
+     (buffer :pointer-void)
+     (offset :uint64-t)
+     (size :uint64-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderCopyBufferToBuffer" wgpu-command-encoder-copy-buffer-to-buffer) :void
   (command-encoder wgpu-command-encoder)
   (source wgpu-buffer)
@@ -136,36 +314,83 @@
   (destination wgpu-buffer)
   (destination-offset :uint64)
   (size :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderCopyBufferToBuffer" wgpu-command-encoder-copy-buffer-to-buffer)
+    ((command-encoder :pointer-void)
+     (source :pointer-void)
+     (source-offset :uint64-t)
+     (destination :pointer-void)
+     (destination-offset :uint64-t)
+     (size :uint64-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderCopyBufferToTexture" wgpu-command-encoder-copy-buffer-to-texture) :void
   (command-encoder wgpu-command-encoder)
   (source :pointer)
   (destination :pointer)
   (copy-size :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderCopyBufferToTexture" wgpu-command-encoder-copy-buffer-to-texture)
+    ((command-encoder :pointer-void)
+     (source :pointer-void)
+     (destination :pointer-void)
+     (copy-size :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderCopyTextureToBuffer" wgpu-command-encoder-copy-texture-to-buffer) :void
   (command-encoder wgpu-command-encoder)
   (source :pointer)
   (destination :pointer)
   (copy-size :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderCopyTextureToBuffer" wgpu-command-encoder-copy-texture-to-buffer)
+    ((command-encoder :pointer-void)
+     (source :pointer-void)
+     (destination :pointer-void)
+     (copy-size :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderCopyTextureToTexture" wgpu-command-encoder-copy-texture-to-texture) :void
   (command-encoder wgpu-command-encoder)
   (source :pointer)
   (destination :pointer)
   (copy-size :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderCopyTextureToTexture" wgpu-command-encoder-copy-texture-to-texture)
+    ((command-encoder :pointer-void)
+     (source :pointer-void)
+     (destination :pointer-void)
+     (copy-size :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderFinish" wgpu-command-encoder-finish) wgpu-command-buffer
   (command-encoder wgpu-command-encoder)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderFinish" wgpu-command-encoder-finish)
+    ((command-encoder :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
-;; NOTE: wgpu-command-encoder-insert-debug-marker skipped (param markerLabel is WGPUStringView by value) - use shim
+(defun wgpu-command-encoder-insert-debug-marker (command-encoder data length)
+  (wgpu-shim-command-encoder-insert-debug-marker command-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderPopDebugGroup" wgpu-command-encoder-pop-debug-group) :void
   (command-encoder wgpu-command-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderPopDebugGroup" wgpu-command-encoder-pop-debug-group)
+    ((command-encoder :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-command-encoder-push-debug-group skipped (param groupLabel is WGPUStringView by value) - use shim
+(defun wgpu-command-encoder-push-debug-group (command-encoder data length)
+  (wgpu-shim-command-encoder-push-debug-group command-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderResolveQuerySet" wgpu-command-encoder-resolve-query-set) :void
   (command-encoder wgpu-command-encoder)
   (query-set wgpu-query-set)
@@ -173,246 +398,586 @@
   (query-count :uint32)
   (destination wgpu-buffer)
   (destination-offset :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderResolveQuerySet" wgpu-command-encoder-resolve-query-set)
+    ((command-encoder :pointer-void)
+     (query-set :pointer-void)
+     (first-query :uint32-t)
+     (query-count :uint32-t)
+     (destination :pointer-void)
+     (destination-offset :uint64-t))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-command-encoder-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-command-encoder-set-label (command-encoder data length)
+  (wgpu-shim-command-encoder-set-label command-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderWriteTimestamp" wgpu-command-encoder-write-timestamp) :void
   (command-encoder wgpu-command-encoder)
   (query-set wgpu-query-set)
   (query-index :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderWriteTimestamp" wgpu-command-encoder-write-timestamp)
+    ((command-encoder :pointer-void)
+     (query-set :pointer-void)
+     (query-index :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderAddRef" wgpu-command-encoder-add-ref) :void
   (command-encoder wgpu-command-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderAddRef" wgpu-command-encoder-add-ref)
+    ((command-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderRelease" wgpu-command-encoder-release) :void
   (command-encoder wgpu-command-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderRelease" wgpu-command-encoder-release)
+    ((command-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderDispatchWorkgroups" wgpu-compute-pass-encoder-dispatch-workgroups) :void
   (compute-pass-encoder wgpu-compute-pass-encoder)
   (workgroup-count-x :uint32)
   (workgroup-count-y :uint32)
   (workgroup-count-z :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderDispatchWorkgroups" wgpu-compute-pass-encoder-dispatch-workgroups)
+    ((compute-pass-encoder :pointer-void)
+     (workgroup-count-x :uint32-t)
+     (workgroup-count-y :uint32-t)
+     (workgroup-count-z :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderDispatchWorkgroupsIndirect" wgpu-compute-pass-encoder-dispatch-workgroups-indirect) :void
   (compute-pass-encoder wgpu-compute-pass-encoder)
   (indirect-buffer wgpu-buffer)
   (indirect-offset :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderDispatchWorkgroupsIndirect" wgpu-compute-pass-encoder-dispatch-workgroups-indirect)
+    ((compute-pass-encoder :pointer-void)
+     (indirect-buffer :pointer-void)
+     (indirect-offset :uint64-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderEnd" wgpu-compute-pass-encoder-end) :void
   (compute-pass-encoder wgpu-compute-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderEnd" wgpu-compute-pass-encoder-end)
+    ((compute-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-compute-pass-encoder-insert-debug-marker skipped (param markerLabel is WGPUStringView by value) - use shim
+(defun wgpu-compute-pass-encoder-insert-debug-marker (compute-pass-encoder data length)
+  (wgpu-shim-compute-pass-encoder-insert-debug-marker compute-pass-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderPopDebugGroup" wgpu-compute-pass-encoder-pop-debug-group) :void
   (compute-pass-encoder wgpu-compute-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderPopDebugGroup" wgpu-compute-pass-encoder-pop-debug-group)
+    ((compute-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-compute-pass-encoder-push-debug-group skipped (param groupLabel is WGPUStringView by value) - use shim
+(defun wgpu-compute-pass-encoder-push-debug-group (compute-pass-encoder data length)
+  (wgpu-shim-compute-pass-encoder-push-debug-group compute-pass-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderSetBindGroup" wgpu-compute-pass-encoder-set-bind-group) :void
   (compute-pass-encoder wgpu-compute-pass-encoder)
   (group-index :uint32)
   (group wgpu-bind-group)
   (dynamic-offset-count :size)
   (dynamic-offsets :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderSetBindGroup" wgpu-compute-pass-encoder-set-bind-group)
+    ((compute-pass-encoder :pointer-void)
+     (group-index :uint32-t)
+     (group :pointer-void)
+     (dynamic-offset-count :cl-index)
+     (dynamic-offsets :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderSetImmediates" wgpu-compute-pass-encoder-set-immediates) :void
   (compute-pass-encoder wgpu-compute-pass-encoder)
   (offset :uint32)
   (data :pointer)
   (size :size))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderSetImmediates" wgpu-compute-pass-encoder-set-immediates)
+    ((compute-pass-encoder :pointer-void)
+     (offset :uint32-t)
+     (data :pointer-void)
+     (size :cl-index))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-compute-pass-encoder-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-compute-pass-encoder-set-label (compute-pass-encoder data length)
+  (wgpu-shim-compute-pass-encoder-set-label compute-pass-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderSetPipeline" wgpu-compute-pass-encoder-set-pipeline) :void
   (compute-pass-encoder wgpu-compute-pass-encoder)
   (pipeline wgpu-compute-pipeline))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderSetPipeline" wgpu-compute-pass-encoder-set-pipeline)
+    ((compute-pass-encoder :pointer-void)
+     (pipeline :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderAddRef" wgpu-compute-pass-encoder-add-ref) :void
   (compute-pass-encoder wgpu-compute-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderAddRef" wgpu-compute-pass-encoder-add-ref)
+    ((compute-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderRelease" wgpu-compute-pass-encoder-release) :void
   (compute-pass-encoder wgpu-compute-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderRelease" wgpu-compute-pass-encoder-release)
+    ((compute-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePipelineGetBindGroupLayout" wgpu-compute-pipeline-get-bind-group-layout) wgpu-bind-group-layout
   (compute-pipeline wgpu-compute-pipeline)
   (group-index :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuComputePipelineGetBindGroupLayout" wgpu-compute-pipeline-get-bind-group-layout)
+    ((compute-pipeline :pointer-void)
+     (group-index :uint32-t))
+  :result-type :pointer-void :language :c)
 
-;; NOTE: wgpu-compute-pipeline-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-compute-pipeline-set-label (compute-pipeline data length)
+  (wgpu-shim-compute-pipeline-set-label compute-pipeline data length))
 
+#-(ecl)
 (defcfun ("wgpuComputePipelineAddRef" wgpu-compute-pipeline-add-ref) :void
   (compute-pipeline wgpu-compute-pipeline))
+#+(ecl)
+(ffi:def-function ("wgpuComputePipelineAddRef" wgpu-compute-pipeline-add-ref)
+    ((compute-pipeline :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePipelineRelease" wgpu-compute-pipeline-release) :void
   (compute-pipeline wgpu-compute-pipeline))
+#+(ecl)
+(ffi:def-function ("wgpuComputePipelineRelease" wgpu-compute-pipeline-release)
+    ((compute-pipeline :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateBindGroup" wgpu-device-create-bind-group) wgpu-bind-group
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateBindGroup" wgpu-device-create-bind-group)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateBindGroupLayout" wgpu-device-create-bind-group-layout) wgpu-bind-group-layout
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateBindGroupLayout" wgpu-device-create-bind-group-layout)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateBuffer" wgpu-device-create-buffer) wgpu-buffer
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateBuffer" wgpu-device-create-buffer)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateCommandEncoder" wgpu-device-create-command-encoder) wgpu-command-encoder
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateCommandEncoder" wgpu-device-create-command-encoder)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateComputePipeline" wgpu-device-create-compute-pipeline) wgpu-compute-pipeline
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateComputePipeline" wgpu-device-create-compute-pipeline)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
-;; NOTE: wgpu-device-create-compute-pipeline-async skipped (returns WGPUFuture by value) - use shim
+(defun wgpu-device-create-compute-pipeline-async (device descriptor next-in-chain callback-mode callback userdata1 userdata2 out-future)
+  (wgpu-shim-device-create-compute-pipeline-async device descriptor next-in-chain callback-mode callback userdata1 userdata2 out-future))
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreatePipelineLayout" wgpu-device-create-pipeline-layout) wgpu-pipeline-layout
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreatePipelineLayout" wgpu-device-create-pipeline-layout)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateQuerySet" wgpu-device-create-query-set) wgpu-query-set
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateQuerySet" wgpu-device-create-query-set)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateRenderBundleEncoder" wgpu-device-create-render-bundle-encoder) wgpu-render-bundle-encoder
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateRenderBundleEncoder" wgpu-device-create-render-bundle-encoder)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateRenderPipeline" wgpu-device-create-render-pipeline) wgpu-render-pipeline
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateRenderPipeline" wgpu-device-create-render-pipeline)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
-;; NOTE: wgpu-device-create-render-pipeline-async skipped (returns WGPUFuture by value) - use shim
+(defun wgpu-device-create-render-pipeline-async (device descriptor next-in-chain callback-mode callback userdata1 userdata2 out-future)
+  (wgpu-shim-device-create-render-pipeline-async device descriptor next-in-chain callback-mode callback userdata1 userdata2 out-future))
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateSampler" wgpu-device-create-sampler) wgpu-sampler
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateSampler" wgpu-device-create-sampler)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateShaderModule" wgpu-device-create-shader-module) wgpu-shader-module
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateShaderModule" wgpu-device-create-shader-module)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateTexture" wgpu-device-create-texture) wgpu-texture
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateTexture" wgpu-device-create-texture)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceDestroy" wgpu-device-destroy) :void
   (device wgpu-device))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceDestroy" wgpu-device-destroy)
+    ((device :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceGetAdapterInfo" wgpu-device-get-adapter-info) wgpu-status
   (device wgpu-device)
   (adapter-info :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceGetAdapterInfo" wgpu-device-get-adapter-info)
+    ((device :pointer-void)
+     (adapter-info :pointer-void))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceGetFeatures" wgpu-device-get-features) :void
   (device wgpu-device)
   (features :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceGetFeatures" wgpu-device-get-features)
+    ((device :pointer-void)
+     (features :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceGetLimits" wgpu-device-get-limits) wgpu-status
   (device wgpu-device)
   (limits :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceGetLimits" wgpu-device-get-limits)
+    ((device :pointer-void)
+     (limits :pointer-void))
+  :result-type :int :language :c)
 
-;; NOTE: wgpu-device-get-lost-future skipped (returns WGPUFuture by value) - use shim
+;; NOTE: wgpu-device-get-lost-future skipped (returns WGPUFuture by value) - no shim available
 
+#-(ecl)
 (defcfun ("wgpuDeviceGetQueue" wgpu-device-get-queue) wgpu-queue
   (device wgpu-device))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceGetQueue" wgpu-device-get-queue)
+    ((device :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceHasFeature" wgpu-device-has-feature) wgpu-bool
   (device wgpu-device)
   (feature wgpu-feature-name))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceHasFeature" wgpu-device-has-feature)
+    ((device :pointer-void)
+     (feature :int))
+  :result-type :uint32-t :language :c)
 
-;; NOTE: wgpu-device-pop-error-scope skipped (returns WGPUFuture by value) - use shim
+(defun wgpu-device-pop-error-scope (device next-in-chain callback-mode callback userdata1 userdata2 out-future)
+  (wgpu-shim-device-pop-error-scope device next-in-chain callback-mode callback userdata1 userdata2 out-future))
 
+#-(ecl)
 (defcfun ("wgpuDevicePushErrorScope" wgpu-device-push-error-scope) :void
   (device wgpu-device)
   (filter wgpu-error-filter))
+#+(ecl)
+(ffi:def-function ("wgpuDevicePushErrorScope" wgpu-device-push-error-scope)
+    ((device :pointer-void)
+     (filter :int))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-device-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-device-set-label (device data length)
+  (wgpu-shim-device-set-label device data length))
 
+#-(ecl)
 (defcfun ("wgpuDeviceAddRef" wgpu-device-add-ref) :void
   (device wgpu-device))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceAddRef" wgpu-device-add-ref)
+    ((device :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceRelease" wgpu-device-release) :void
   (device wgpu-device))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceRelease" wgpu-device-release)
+    ((device :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-external-texture-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-external-texture-set-label (external-texture data length)
+  (wgpu-shim-external-texture-set-label external-texture data length))
 
+#-(ecl)
 (defcfun ("wgpuExternalTextureAddRef" wgpu-external-texture-add-ref) :void
   (external-texture wgpu-external-texture))
+#+(ecl)
+(ffi:def-function ("wgpuExternalTextureAddRef" wgpu-external-texture-add-ref)
+    ((external-texture :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuExternalTextureRelease" wgpu-external-texture-release) :void
   (external-texture wgpu-external-texture))
+#+(ecl)
+(ffi:def-function ("wgpuExternalTextureRelease" wgpu-external-texture-release)
+    ((external-texture :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuInstanceCreateSurface" wgpu-instance-create-surface) wgpu-surface
   (instance wgpu-instance)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuInstanceCreateSurface" wgpu-instance-create-surface)
+    ((instance :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuInstanceGetWGSLLanguageFeatures" wgpu-instance-get-wgsl-language-features) :void
   (instance wgpu-instance)
   (features :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuInstanceGetWGSLLanguageFeatures" wgpu-instance-get-wgsl-language-features)
+    ((instance :pointer-void)
+     (features :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuInstanceHasWGSLLanguageFeature" wgpu-instance-has-wgsl-language-feature) wgpu-bool
   (instance wgpu-instance)
   (feature wgpu-wgsl-language-feature-name))
+#+(ecl)
+(ffi:def-function ("wgpuInstanceHasWGSLLanguageFeature" wgpu-instance-has-wgsl-language-feature)
+    ((instance :pointer-void)
+     (feature :int))
+  :result-type :uint32-t :language :c)
 
+#-(ecl)
 (defcfun ("wgpuInstanceProcessEvents" wgpu-instance-process-events) :void
   (instance wgpu-instance))
+#+(ecl)
+(ffi:def-function ("wgpuInstanceProcessEvents" wgpu-instance-process-events)
+    ((instance :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-instance-request-adapter skipped (returns WGPUFuture by value) - use shim
+(defun wgpu-instance-request-adapter (instance options next-in-chain callback-mode callback userdata1 userdata2 out-future)
+  (wgpu-shim-instance-request-adapter instance options next-in-chain callback-mode callback userdata1 userdata2 out-future))
 
+#-(ecl)
 (defcfun ("wgpuInstanceWaitAny" wgpu-instance-wait-any) wgpu-wait-status
   (instance wgpu-instance)
   (future-count :size)
   (futures :pointer)
   (timeout-ns :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuInstanceWaitAny" wgpu-instance-wait-any)
+    ((instance :pointer-void)
+     (future-count :cl-index)
+     (futures :pointer-void)
+     (timeout-ns :uint64-t))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuInstanceAddRef" wgpu-instance-add-ref) :void
   (instance wgpu-instance))
+#+(ecl)
+(ffi:def-function ("wgpuInstanceAddRef" wgpu-instance-add-ref)
+    ((instance :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuInstanceRelease" wgpu-instance-release) :void
   (instance wgpu-instance))
+#+(ecl)
+(ffi:def-function ("wgpuInstanceRelease" wgpu-instance-release)
+    ((instance :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-pipeline-layout-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-pipeline-layout-set-label (pipeline-layout data length)
+  (wgpu-shim-pipeline-layout-set-label pipeline-layout data length))
 
+#-(ecl)
 (defcfun ("wgpuPipelineLayoutAddRef" wgpu-pipeline-layout-add-ref) :void
   (pipeline-layout wgpu-pipeline-layout))
+#+(ecl)
+(ffi:def-function ("wgpuPipelineLayoutAddRef" wgpu-pipeline-layout-add-ref)
+    ((pipeline-layout :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuPipelineLayoutRelease" wgpu-pipeline-layout-release) :void
   (pipeline-layout wgpu-pipeline-layout))
+#+(ecl)
+(ffi:def-function ("wgpuPipelineLayoutRelease" wgpu-pipeline-layout-release)
+    ((pipeline-layout :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQuerySetDestroy" wgpu-query-set-destroy) :void
   (query-set wgpu-query-set))
+#+(ecl)
+(ffi:def-function ("wgpuQuerySetDestroy" wgpu-query-set-destroy)
+    ((query-set :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQuerySetGetCount" wgpu-query-set-get-count) :uint32
   (query-set wgpu-query-set))
+#+(ecl)
+(ffi:def-function ("wgpuQuerySetGetCount" wgpu-query-set-get-count)
+    ((query-set :pointer-void))
+  :result-type :uint32-t :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQuerySetGetType" wgpu-query-set-get-type) wgpu-query-type
   (query-set wgpu-query-set))
+#+(ecl)
+(ffi:def-function ("wgpuQuerySetGetType" wgpu-query-set-get-type)
+    ((query-set :pointer-void))
+  :result-type :int :language :c)
 
-;; NOTE: wgpu-query-set-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-query-set-set-label (query-set data length)
+  (wgpu-shim-query-set-set-label query-set data length))
 
+#-(ecl)
 (defcfun ("wgpuQuerySetAddRef" wgpu-query-set-add-ref) :void
   (query-set wgpu-query-set))
+#+(ecl)
+(ffi:def-function ("wgpuQuerySetAddRef" wgpu-query-set-add-ref)
+    ((query-set :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQuerySetRelease" wgpu-query-set-release) :void
   (query-set wgpu-query-set))
+#+(ecl)
+(ffi:def-function ("wgpuQuerySetRelease" wgpu-query-set-release)
+    ((query-set :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-queue-on-submitted-work-done skipped (returns WGPUFuture by value) - use shim
+(defun wgpu-queue-on-submitted-work-done (queue next-in-chain callback-mode callback userdata1 userdata2 out-future)
+  (wgpu-shim-queue-on-submitted-work-done queue next-in-chain callback-mode callback userdata1 userdata2 out-future))
 
-;; NOTE: wgpu-queue-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-queue-set-label (queue data length)
+  (wgpu-shim-queue-set-label queue data length))
 
+#-(ecl)
 (defcfun ("wgpuQueueSubmit" wgpu-queue-submit) :void
   (queue wgpu-queue)
   (command-count :size)
   (commands :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuQueueSubmit" wgpu-queue-submit)
+    ((queue :pointer-void)
+     (command-count :cl-index)
+     (commands :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQueueWriteBuffer" wgpu-queue-write-buffer) :void
   (queue wgpu-queue)
   (buffer wgpu-buffer)
   (buffer-offset :uint64)
   (data :pointer)
   (size :size))
+#+(ecl)
+(ffi:def-function ("wgpuQueueWriteBuffer" wgpu-queue-write-buffer)
+    ((queue :pointer-void)
+     (buffer :pointer-void)
+     (buffer-offset :uint64-t)
+     (data :pointer-void)
+     (size :cl-index))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQueueWriteTexture" wgpu-queue-write-texture) :void
   (queue wgpu-queue)
   (destination :pointer)
@@ -420,28 +985,68 @@
   (data-size :size)
   (data-layout :pointer)
   (write-size :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuQueueWriteTexture" wgpu-queue-write-texture)
+    ((queue :pointer-void)
+     (destination :pointer-void)
+     (data :pointer-void)
+     (data-size :cl-index)
+     (data-layout :pointer-void)
+     (write-size :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQueueAddRef" wgpu-queue-add-ref) :void
   (queue wgpu-queue))
+#+(ecl)
+(ffi:def-function ("wgpuQueueAddRef" wgpu-queue-add-ref)
+    ((queue :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQueueRelease" wgpu-queue-release) :void
   (queue wgpu-queue))
+#+(ecl)
+(ffi:def-function ("wgpuQueueRelease" wgpu-queue-release)
+    ((queue :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-render-bundle-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-render-bundle-set-label (render-bundle data length)
+  (wgpu-shim-render-bundle-set-label render-bundle data length))
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleAddRef" wgpu-render-bundle-add-ref) :void
   (render-bundle wgpu-render-bundle))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleAddRef" wgpu-render-bundle-add-ref)
+    ((render-bundle :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleRelease" wgpu-render-bundle-release) :void
   (render-bundle wgpu-render-bundle))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleRelease" wgpu-render-bundle-release)
+    ((render-bundle :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderDraw" wgpu-render-bundle-encoder-draw) :void
   (render-bundle-encoder wgpu-render-bundle-encoder)
   (vertex-count :uint32)
   (instance-count :uint32)
   (first-vertex :uint32)
   (first-instance :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderDraw" wgpu-render-bundle-encoder-draw)
+    ((render-bundle-encoder :pointer-void)
+     (vertex-count :uint32-t)
+     (instance-count :uint32-t)
+     (first-vertex :uint32-t)
+     (first-instance :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderDrawIndexed" wgpu-render-bundle-encoder-draw-indexed) :void
   (render-bundle-encoder wgpu-render-bundle-encoder)
   (index-count :uint32)
@@ -449,78 +1054,182 @@
   (first-index :uint32)
   (base-vertex :int32)
   (first-instance :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderDrawIndexed" wgpu-render-bundle-encoder-draw-indexed)
+    ((render-bundle-encoder :pointer-void)
+     (index-count :uint32-t)
+     (instance-count :uint32-t)
+     (first-index :uint32-t)
+     (base-vertex :int32-t)
+     (first-instance :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderDrawIndexedIndirect" wgpu-render-bundle-encoder-draw-indexed-indirect) :void
   (render-bundle-encoder wgpu-render-bundle-encoder)
   (indirect-buffer wgpu-buffer)
   (indirect-offset :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderDrawIndexedIndirect" wgpu-render-bundle-encoder-draw-indexed-indirect)
+    ((render-bundle-encoder :pointer-void)
+     (indirect-buffer :pointer-void)
+     (indirect-offset :uint64-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderDrawIndirect" wgpu-render-bundle-encoder-draw-indirect) :void
   (render-bundle-encoder wgpu-render-bundle-encoder)
   (indirect-buffer wgpu-buffer)
   (indirect-offset :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderDrawIndirect" wgpu-render-bundle-encoder-draw-indirect)
+    ((render-bundle-encoder :pointer-void)
+     (indirect-buffer :pointer-void)
+     (indirect-offset :uint64-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderFinish" wgpu-render-bundle-encoder-finish) wgpu-render-bundle
   (render-bundle-encoder wgpu-render-bundle-encoder)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderFinish" wgpu-render-bundle-encoder-finish)
+    ((render-bundle-encoder :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
-;; NOTE: wgpu-render-bundle-encoder-insert-debug-marker skipped (param markerLabel is WGPUStringView by value) - use shim
+(defun wgpu-render-bundle-encoder-insert-debug-marker (render-bundle-encoder data length)
+  (wgpu-shim-render-bundle-encoder-insert-debug-marker render-bundle-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderPopDebugGroup" wgpu-render-bundle-encoder-pop-debug-group) :void
   (render-bundle-encoder wgpu-render-bundle-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderPopDebugGroup" wgpu-render-bundle-encoder-pop-debug-group)
+    ((render-bundle-encoder :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-render-bundle-encoder-push-debug-group skipped (param groupLabel is WGPUStringView by value) - use shim
+(defun wgpu-render-bundle-encoder-push-debug-group (render-bundle-encoder data length)
+  (wgpu-shim-render-bundle-encoder-push-debug-group render-bundle-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderSetBindGroup" wgpu-render-bundle-encoder-set-bind-group) :void
   (render-bundle-encoder wgpu-render-bundle-encoder)
   (group-index :uint32)
   (group wgpu-bind-group)
   (dynamic-offset-count :size)
   (dynamic-offsets :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderSetBindGroup" wgpu-render-bundle-encoder-set-bind-group)
+    ((render-bundle-encoder :pointer-void)
+     (group-index :uint32-t)
+     (group :pointer-void)
+     (dynamic-offset-count :cl-index)
+     (dynamic-offsets :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderSetImmediates" wgpu-render-bundle-encoder-set-immediates) :void
   (render-bundle-encoder wgpu-render-bundle-encoder)
   (offset :uint32)
   (data :pointer)
   (size :size))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderSetImmediates" wgpu-render-bundle-encoder-set-immediates)
+    ((render-bundle-encoder :pointer-void)
+     (offset :uint32-t)
+     (data :pointer-void)
+     (size :cl-index))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderSetIndexBuffer" wgpu-render-bundle-encoder-set-index-buffer) :void
   (render-bundle-encoder wgpu-render-bundle-encoder)
   (buffer wgpu-buffer)
   (format wgpu-index-format)
   (offset :uint64)
   (size :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderSetIndexBuffer" wgpu-render-bundle-encoder-set-index-buffer)
+    ((render-bundle-encoder :pointer-void)
+     (buffer :pointer-void)
+     (format :int)
+     (offset :uint64-t)
+     (size :uint64-t))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-render-bundle-encoder-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-render-bundle-encoder-set-label (render-bundle-encoder data length)
+  (wgpu-shim-render-bundle-encoder-set-label render-bundle-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderSetPipeline" wgpu-render-bundle-encoder-set-pipeline) :void
   (render-bundle-encoder wgpu-render-bundle-encoder)
   (pipeline wgpu-render-pipeline))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderSetPipeline" wgpu-render-bundle-encoder-set-pipeline)
+    ((render-bundle-encoder :pointer-void)
+     (pipeline :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderSetVertexBuffer" wgpu-render-bundle-encoder-set-vertex-buffer) :void
   (render-bundle-encoder wgpu-render-bundle-encoder)
   (slot :uint32)
   (buffer wgpu-buffer)
   (offset :uint64)
   (size :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderSetVertexBuffer" wgpu-render-bundle-encoder-set-vertex-buffer)
+    ((render-bundle-encoder :pointer-void)
+     (slot :uint32-t)
+     (buffer :pointer-void)
+     (offset :uint64-t)
+     (size :uint64-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderAddRef" wgpu-render-bundle-encoder-add-ref) :void
   (render-bundle-encoder wgpu-render-bundle-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderAddRef" wgpu-render-bundle-encoder-add-ref)
+    ((render-bundle-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderBundleEncoderRelease" wgpu-render-bundle-encoder-release) :void
   (render-bundle-encoder wgpu-render-bundle-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuRenderBundleEncoderRelease" wgpu-render-bundle-encoder-release)
+    ((render-bundle-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderBeginOcclusionQuery" wgpu-render-pass-encoder-begin-occlusion-query) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (query-index :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderBeginOcclusionQuery" wgpu-render-pass-encoder-begin-occlusion-query)
+    ((render-pass-encoder :pointer-void)
+     (query-index :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderDraw" wgpu-render-pass-encoder-draw) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (vertex-count :uint32)
   (instance-count :uint32)
   (first-vertex :uint32)
   (first-instance :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderDraw" wgpu-render-pass-encoder-draw)
+    ((render-pass-encoder :pointer-void)
+     (vertex-count :uint32-t)
+     (instance-count :uint32-t)
+     (first-vertex :uint32-t)
+     (first-instance :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderDrawIndexed" wgpu-render-pass-encoder-draw-indexed) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (index-count :uint32)
@@ -528,83 +1237,194 @@
   (first-index :uint32)
   (base-vertex :int32)
   (first-instance :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderDrawIndexed" wgpu-render-pass-encoder-draw-indexed)
+    ((render-pass-encoder :pointer-void)
+     (index-count :uint32-t)
+     (instance-count :uint32-t)
+     (first-index :uint32-t)
+     (base-vertex :int32-t)
+     (first-instance :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderDrawIndexedIndirect" wgpu-render-pass-encoder-draw-indexed-indirect) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (indirect-buffer wgpu-buffer)
   (indirect-offset :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderDrawIndexedIndirect" wgpu-render-pass-encoder-draw-indexed-indirect)
+    ((render-pass-encoder :pointer-void)
+     (indirect-buffer :pointer-void)
+     (indirect-offset :uint64-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderDrawIndirect" wgpu-render-pass-encoder-draw-indirect) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (indirect-buffer wgpu-buffer)
   (indirect-offset :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderDrawIndirect" wgpu-render-pass-encoder-draw-indirect)
+    ((render-pass-encoder :pointer-void)
+     (indirect-buffer :pointer-void)
+     (indirect-offset :uint64-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderEnd" wgpu-render-pass-encoder-end) :void
   (render-pass-encoder wgpu-render-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderEnd" wgpu-render-pass-encoder-end)
+    ((render-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderEndOcclusionQuery" wgpu-render-pass-encoder-end-occlusion-query) :void
   (render-pass-encoder wgpu-render-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderEndOcclusionQuery" wgpu-render-pass-encoder-end-occlusion-query)
+    ((render-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderExecuteBundles" wgpu-render-pass-encoder-execute-bundles) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (bundle-count :size)
   (bundles :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderExecuteBundles" wgpu-render-pass-encoder-execute-bundles)
+    ((render-pass-encoder :pointer-void)
+     (bundle-count :cl-index)
+     (bundles :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-render-pass-encoder-insert-debug-marker skipped (param markerLabel is WGPUStringView by value) - use shim
+(defun wgpu-render-pass-encoder-insert-debug-marker (render-pass-encoder data length)
+  (wgpu-shim-render-pass-encoder-insert-debug-marker render-pass-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderPopDebugGroup" wgpu-render-pass-encoder-pop-debug-group) :void
   (render-pass-encoder wgpu-render-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderPopDebugGroup" wgpu-render-pass-encoder-pop-debug-group)
+    ((render-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-render-pass-encoder-push-debug-group skipped (param groupLabel is WGPUStringView by value) - use shim
+(defun wgpu-render-pass-encoder-push-debug-group (render-pass-encoder data length)
+  (wgpu-shim-render-pass-encoder-push-debug-group render-pass-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderSetBindGroup" wgpu-render-pass-encoder-set-bind-group) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (group-index :uint32)
   (group wgpu-bind-group)
   (dynamic-offset-count :size)
   (dynamic-offsets :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderSetBindGroup" wgpu-render-pass-encoder-set-bind-group)
+    ((render-pass-encoder :pointer-void)
+     (group-index :uint32-t)
+     (group :pointer-void)
+     (dynamic-offset-count :cl-index)
+     (dynamic-offsets :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderSetBlendConstant" wgpu-render-pass-encoder-set-blend-constant) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (color :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderSetBlendConstant" wgpu-render-pass-encoder-set-blend-constant)
+    ((render-pass-encoder :pointer-void)
+     (color :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderSetImmediates" wgpu-render-pass-encoder-set-immediates) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (offset :uint32)
   (data :pointer)
   (size :size))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderSetImmediates" wgpu-render-pass-encoder-set-immediates)
+    ((render-pass-encoder :pointer-void)
+     (offset :uint32-t)
+     (data :pointer-void)
+     (size :cl-index))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderSetIndexBuffer" wgpu-render-pass-encoder-set-index-buffer) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (buffer wgpu-buffer)
   (format wgpu-index-format)
   (offset :uint64)
   (size :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderSetIndexBuffer" wgpu-render-pass-encoder-set-index-buffer)
+    ((render-pass-encoder :pointer-void)
+     (buffer :pointer-void)
+     (format :int)
+     (offset :uint64-t)
+     (size :uint64-t))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-render-pass-encoder-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-render-pass-encoder-set-label (render-pass-encoder data length)
+  (wgpu-shim-render-pass-encoder-set-label render-pass-encoder data length))
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderSetPipeline" wgpu-render-pass-encoder-set-pipeline) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (pipeline wgpu-render-pipeline))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderSetPipeline" wgpu-render-pass-encoder-set-pipeline)
+    ((render-pass-encoder :pointer-void)
+     (pipeline :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderSetScissorRect" wgpu-render-pass-encoder-set-scissor-rect) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (x :uint32)
   (y :uint32)
   (width :uint32)
   (height :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderSetScissorRect" wgpu-render-pass-encoder-set-scissor-rect)
+    ((render-pass-encoder :pointer-void)
+     (x :uint32-t)
+     (y :uint32-t)
+     (width :uint32-t)
+     (height :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderSetStencilReference" wgpu-render-pass-encoder-set-stencil-reference) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (reference :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderSetStencilReference" wgpu-render-pass-encoder-set-stencil-reference)
+    ((render-pass-encoder :pointer-void)
+     (reference :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderSetVertexBuffer" wgpu-render-pass-encoder-set-vertex-buffer) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (slot :uint32)
   (buffer wgpu-buffer)
   (offset :uint64)
   (size :uint64))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderSetVertexBuffer" wgpu-render-pass-encoder-set-vertex-buffer)
+    ((render-pass-encoder :pointer-void)
+     (slot :uint32-t)
+     (buffer :pointer-void)
+     (offset :uint64-t)
+     (size :uint64-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderSetViewport" wgpu-render-pass-encoder-set-viewport) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (x :float)
@@ -613,184 +1433,451 @@
   (height :float)
   (min-depth :float)
   (max-depth :float))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderSetViewport" wgpu-render-pass-encoder-set-viewport)
+    ((render-pass-encoder :pointer-void)
+     (x :float)
+     (y :float)
+     (width :float)
+     (height :float)
+     (min-depth :float)
+     (max-depth :float))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderAddRef" wgpu-render-pass-encoder-add-ref) :void
   (render-pass-encoder wgpu-render-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderAddRef" wgpu-render-pass-encoder-add-ref)
+    ((render-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderRelease" wgpu-render-pass-encoder-release) :void
   (render-pass-encoder wgpu-render-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderRelease" wgpu-render-pass-encoder-release)
+    ((render-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPipelineGetBindGroupLayout" wgpu-render-pipeline-get-bind-group-layout) wgpu-bind-group-layout
   (render-pipeline wgpu-render-pipeline)
   (group-index :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPipelineGetBindGroupLayout" wgpu-render-pipeline-get-bind-group-layout)
+    ((render-pipeline :pointer-void)
+     (group-index :uint32-t))
+  :result-type :pointer-void :language :c)
 
-;; NOTE: wgpu-render-pipeline-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-render-pipeline-set-label (render-pipeline data length)
+  (wgpu-shim-render-pipeline-set-label render-pipeline data length))
 
+#-(ecl)
 (defcfun ("wgpuRenderPipelineAddRef" wgpu-render-pipeline-add-ref) :void
   (render-pipeline wgpu-render-pipeline))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPipelineAddRef" wgpu-render-pipeline-add-ref)
+    ((render-pipeline :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPipelineRelease" wgpu-render-pipeline-release) :void
   (render-pipeline wgpu-render-pipeline))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPipelineRelease" wgpu-render-pipeline-release)
+    ((render-pipeline :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-sampler-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-sampler-set-label (sampler data length)
+  (wgpu-shim-sampler-set-label sampler data length))
 
+#-(ecl)
 (defcfun ("wgpuSamplerAddRef" wgpu-sampler-add-ref) :void
   (sampler wgpu-sampler))
+#+(ecl)
+(ffi:def-function ("wgpuSamplerAddRef" wgpu-sampler-add-ref)
+    ((sampler :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuSamplerRelease" wgpu-sampler-release) :void
   (sampler wgpu-sampler))
+#+(ecl)
+(ffi:def-function ("wgpuSamplerRelease" wgpu-sampler-release)
+    ((sampler :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-shader-module-get-compilation-info skipped (returns WGPUFuture by value) - use shim
+(defun wgpu-shader-module-get-compilation-info (shader-module next-in-chain callback-mode callback userdata1 userdata2 out-future)
+  (wgpu-shim-shader-module-get-compilation-info shader-module next-in-chain callback-mode callback userdata1 userdata2 out-future))
 
-;; NOTE: wgpu-shader-module-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-shader-module-set-label (shader-module data length)
+  (wgpu-shim-shader-module-set-label shader-module data length))
 
+#-(ecl)
 (defcfun ("wgpuShaderModuleAddRef" wgpu-shader-module-add-ref) :void
   (shader-module wgpu-shader-module))
+#+(ecl)
+(ffi:def-function ("wgpuShaderModuleAddRef" wgpu-shader-module-add-ref)
+    ((shader-module :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuShaderModuleRelease" wgpu-shader-module-release) :void
   (shader-module wgpu-shader-module))
+#+(ecl)
+(ffi:def-function ("wgpuShaderModuleRelease" wgpu-shader-module-release)
+    ((shader-module :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-supported-features-free-members skipped (param supportedFeatures is WGPUSupportedFeatures by value) - use shim
+(defun wgpu-supported-features-free-members (features)
+  (wgpu-shim-supported-features-free-members features))
 
-;; NOTE: wgpu-supported-instance-features-free-members skipped (param supportedInstanceFeatures is WGPUSupportedInstanceFeatures by value) - use shim
+(defun wgpu-supported-instance-features-free-members (features)
+  (wgpu-shim-supported-instance-features-free-members features))
 
-;; NOTE: wgpu-supported-wgsl-language-features-free-members skipped (param supportedWGSLLanguageFeatures is WGPUSupportedWGSLLanguageFeatures by value) - use shim
+(defun wgpu-supported-wgsl-language-features-free-members (features)
+  (wgpu-shim-supported-wgsl-language-features-free-members features))
 
+#-(ecl)
 (defcfun ("wgpuSurfaceConfigure" wgpu-surface-configure) :void
   (surface wgpu-surface)
   (config :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuSurfaceConfigure" wgpu-surface-configure)
+    ((surface :pointer-void)
+     (config :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuSurfaceGetCapabilities" wgpu-surface-get-capabilities) wgpu-status
   (surface wgpu-surface)
   (adapter wgpu-adapter)
   (capabilities :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuSurfaceGetCapabilities" wgpu-surface-get-capabilities)
+    ((surface :pointer-void)
+     (adapter :pointer-void)
+     (capabilities :pointer-void))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuSurfaceGetCurrentTexture" wgpu-surface-get-current-texture) :void
   (surface wgpu-surface)
   (surface-texture :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuSurfaceGetCurrentTexture" wgpu-surface-get-current-texture)
+    ((surface :pointer-void)
+     (surface-texture :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuSurfacePresent" wgpu-surface-present) wgpu-status
   (surface wgpu-surface))
+#+(ecl)
+(ffi:def-function ("wgpuSurfacePresent" wgpu-surface-present)
+    ((surface :pointer-void))
+  :result-type :int :language :c)
 
-;; NOTE: wgpu-surface-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-surface-set-label (surface data length)
+  (wgpu-shim-surface-set-label surface data length))
 
+#-(ecl)
 (defcfun ("wgpuSurfaceUnconfigure" wgpu-surface-unconfigure) :void
   (surface wgpu-surface))
+#+(ecl)
+(ffi:def-function ("wgpuSurfaceUnconfigure" wgpu-surface-unconfigure)
+    ((surface :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuSurfaceAddRef" wgpu-surface-add-ref) :void
   (surface wgpu-surface))
+#+(ecl)
+(ffi:def-function ("wgpuSurfaceAddRef" wgpu-surface-add-ref)
+    ((surface :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuSurfaceRelease" wgpu-surface-release) :void
   (surface wgpu-surface))
+#+(ecl)
+(ffi:def-function ("wgpuSurfaceRelease" wgpu-surface-release)
+    ((surface :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-surface-capabilities-free-members skipped (param surfaceCapabilities is WGPUSurfaceCapabilities by value) - use shim
+(defun wgpu-surface-capabilities-free-members (capabilities)
+  (wgpu-shim-surface-capabilities-free-members capabilities))
 
+#-(ecl)
 (defcfun ("wgpuTextureCreateView" wgpu-texture-create-view) wgpu-texture-view
   (texture wgpu-texture)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuTextureCreateView" wgpu-texture-create-view)
+    ((texture :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureDestroy" wgpu-texture-destroy) :void
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureDestroy" wgpu-texture-destroy)
+    ((texture :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureGetDepthOrArrayLayers" wgpu-texture-get-depth-or-array-layers) :uint32
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureGetDepthOrArrayLayers" wgpu-texture-get-depth-or-array-layers)
+    ((texture :pointer-void))
+  :result-type :uint32-t :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureGetDimension" wgpu-texture-get-dimension) wgpu-texture-dimension
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureGetDimension" wgpu-texture-get-dimension)
+    ((texture :pointer-void))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureGetFormat" wgpu-texture-get-format) wgpu-texture-format
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureGetFormat" wgpu-texture-get-format)
+    ((texture :pointer-void))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureGetHeight" wgpu-texture-get-height) :uint32
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureGetHeight" wgpu-texture-get-height)
+    ((texture :pointer-void))
+  :result-type :uint32-t :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureGetMipLevelCount" wgpu-texture-get-mip-level-count) :uint32
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureGetMipLevelCount" wgpu-texture-get-mip-level-count)
+    ((texture :pointer-void))
+  :result-type :uint32-t :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureGetSampleCount" wgpu-texture-get-sample-count) :uint32
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureGetSampleCount" wgpu-texture-get-sample-count)
+    ((texture :pointer-void))
+  :result-type :uint32-t :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureGetTextureBindingViewDimension" wgpu-texture-get-texture-binding-view-dimension) wgpu-texture-view-dimension
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureGetTextureBindingViewDimension" wgpu-texture-get-texture-binding-view-dimension)
+    ((texture :pointer-void))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureGetUsage" wgpu-texture-get-usage) wgpu-flags
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureGetUsage" wgpu-texture-get-usage)
+    ((texture :pointer-void))
+  :result-type :int :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureGetWidth" wgpu-texture-get-width) :uint32
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureGetWidth" wgpu-texture-get-width)
+    ((texture :pointer-void))
+  :result-type :uint32-t :language :c)
 
-;; NOTE: wgpu-texture-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-texture-set-label (texture data length)
+  (wgpu-shim-texture-set-label texture data length))
 
+#-(ecl)
 (defcfun ("wgpuTextureAddRef" wgpu-texture-add-ref) :void
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureAddRef" wgpu-texture-add-ref)
+    ((texture :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureRelease" wgpu-texture-release) :void
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureRelease" wgpu-texture-release)
+    ((texture :pointer-void))
+  :result-type :void :language :c)
 
-;; NOTE: wgpu-texture-view-set-label skipped (param label is WGPUStringView by value) - use shim
+(defun wgpu-texture-view-set-label (texture-view data length)
+  (wgpu-shim-texture-view-set-label texture-view data length))
 
+#-(ecl)
 (defcfun ("wgpuTextureViewAddRef" wgpu-texture-view-add-ref) :void
   (texture-view wgpu-texture-view))
+#+(ecl)
+(ffi:def-function ("wgpuTextureViewAddRef" wgpu-texture-view-add-ref)
+    ((texture-view :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureViewRelease" wgpu-texture-view-release) :void
   (texture-view wgpu-texture-view))
+#+(ecl)
+(ffi:def-function ("wgpuTextureViewRelease" wgpu-texture-view-release)
+    ((texture-view :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuGenerateReport" wgpu-generate-report) :void
   (instance wgpu-instance)
   (report :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuGenerateReport" wgpu-generate-report)
+    ((instance :pointer-void)
+     (report :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuInstanceEnumerateAdapters" wgpu-instance-enumerate-adapters) :size
   (instance wgpu-instance)
   (options :pointer)
   (adapters :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuInstanceEnumerateAdapters" wgpu-instance-enumerate-adapters)
+    ((instance :pointer-void)
+     (options :pointer-void)
+     (adapters :pointer-void))
+  :result-type :cl-index :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQueueSubmitForIndex" wgpu-queue-submit-for-index) :uint64
   (queue wgpu-queue)
   (command-count :size)
   (commands :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuQueueSubmitForIndex" wgpu-queue-submit-for-index)
+    ((queue :pointer-void)
+     (command-count :cl-index)
+     (commands :pointer-void))
+  :result-type :uint64-t :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQueueGetTimestampPeriod" wgpu-queue-get-timestamp-period) :float
   (queue wgpu-queue))
+#+(ecl)
+(ffi:def-function ("wgpuQueueGetTimestampPeriod" wgpu-queue-get-timestamp-period)
+    ((queue :pointer-void))
+  :result-type :float :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDevicePoll" wgpu-device-poll) :pointer
   (device wgpu-device)
   (wait wgpu-bool)
   (submission-index :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDevicePoll" wgpu-device-poll)
+    ((device :pointer-void)
+     (wait :uint32-t)
+     (submission-index :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceCreateShaderModuleSpirV" wgpu-device-create-shader-module-spir-v) wgpu-shader-module
   (device wgpu-device)
   (descriptor :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceCreateShaderModuleSpirV" wgpu-device-create-shader-module-spir-v)
+    ((device :pointer-void)
+     (descriptor :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuSetLogCallback" wgpu-set-log-callback) :void
   (callback :pointer)
   (userdata :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuSetLogCallback" wgpu-set-log-callback)
+    ((callback :pointer-void)
+     (userdata :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuSetLogLevel" wgpu-set-log-level) :void
   (level wgpu-log-level))
+#+(ecl)
+(ffi:def-function ("wgpuSetLogLevel" wgpu-set-log-level)
+    ((level :int))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuGetVersion" wgpu-get-version) :uint32)
+#+(ecl)
+(ffi:def-function ("wgpuGetVersion" wgpu-get-version) ()
+  :result-type :uint32-t :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceGetNativeMetalDevice" wgpu-device-get-native-metal-device) :pointer
   (device wgpu-device))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceGetNativeMetalDevice" wgpu-device-get-native-metal-device)
+    ((device :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuQueueGetNativeMetalCommandQueue" wgpu-queue-get-native-metal-command-queue) :pointer
   (queue wgpu-queue))
+#+(ecl)
+(ffi:def-function ("wgpuQueueGetNativeMetalCommandQueue" wgpu-queue-get-native-metal-command-queue)
+    ((queue :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuTextureGetNativeMetalTexture" wgpu-texture-get-native-metal-texture) :pointer
   (texture wgpu-texture))
+#+(ecl)
+(ffi:def-function ("wgpuTextureGetNativeMetalTexture" wgpu-texture-get-native-metal-texture)
+    ((texture :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderMultiDrawIndirect" wgpu-render-pass-encoder-multi-draw-indirect) :pointer
   (encoder wgpu-render-pass-encoder)
   (buffer wgpu-buffer)
   (offset :uint64)
   (count :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderMultiDrawIndirect" wgpu-render-pass-encoder-multi-draw-indirect)
+    ((encoder :pointer-void)
+     (buffer :pointer-void)
+     (offset :uint64-t)
+     (count :uint32-t))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderMultiDrawIndexedIndirect" wgpu-render-pass-encoder-multi-draw-indexed-indirect) :void
   (encoder wgpu-render-pass-encoder)
   (buffer wgpu-buffer)
   (offset :uint64)
   (count :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderMultiDrawIndexedIndirect" wgpu-render-pass-encoder-multi-draw-indexed-indirect)
+    ((encoder :pointer-void)
+     (buffer :pointer-void)
+     (offset :uint64-t)
+     (count :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderMultiDrawIndirectCount" wgpu-render-pass-encoder-multi-draw-indirect-count) :void
   (encoder wgpu-render-pass-encoder)
   (buffer wgpu-buffer)
@@ -798,7 +1885,17 @@
   (count_buffer wgpu-buffer)
   (count_buffer_offset :uint64)
   (max_count :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderMultiDrawIndirectCount" wgpu-render-pass-encoder-multi-draw-indirect-count)
+    ((encoder :pointer-void)
+     (buffer :pointer-void)
+     (offset :uint64-t)
+     (count_buffer :pointer-void)
+     (count_buffer_offset :uint64-t)
+     (max_count :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderMultiDrawIndexedIndirectCount" wgpu-render-pass-encoder-multi-draw-indexed-indirect-count) :void
   (encoder wgpu-render-pass-encoder)
   (buffer wgpu-buffer)
@@ -806,40 +1903,104 @@
   (count_buffer wgpu-buffer)
   (count_buffer_offset :uint64)
   (max_count :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderMultiDrawIndexedIndirectCount" wgpu-render-pass-encoder-multi-draw-indexed-indirect-count)
+    ((encoder :pointer-void)
+     (buffer :pointer-void)
+     (offset :uint64-t)
+     (count_buffer :pointer-void)
+     (count_buffer_offset :uint64-t)
+     (max_count :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderBeginPipelineStatisticsQuery" wgpu-compute-pass-encoder-begin-pipeline-statistics-query) :void
   (compute-pass-encoder wgpu-compute-pass-encoder)
   (query-set wgpu-query-set)
   (query-index :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderBeginPipelineStatisticsQuery" wgpu-compute-pass-encoder-begin-pipeline-statistics-query)
+    ((compute-pass-encoder :pointer-void)
+     (query-set :pointer-void)
+     (query-index :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderEndPipelineStatisticsQuery" wgpu-compute-pass-encoder-end-pipeline-statistics-query) :void
   (compute-pass-encoder wgpu-compute-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderEndPipelineStatisticsQuery" wgpu-compute-pass-encoder-end-pipeline-statistics-query)
+    ((compute-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderBeginPipelineStatisticsQuery" wgpu-render-pass-encoder-begin-pipeline-statistics-query) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (query-set wgpu-query-set)
   (query-index :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderBeginPipelineStatisticsQuery" wgpu-render-pass-encoder-begin-pipeline-statistics-query)
+    ((render-pass-encoder :pointer-void)
+     (query-set :pointer-void)
+     (query-index :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderEndPipelineStatisticsQuery" wgpu-render-pass-encoder-end-pipeline-statistics-query) :void
   (render-pass-encoder wgpu-render-pass-encoder))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderEndPipelineStatisticsQuery" wgpu-render-pass-encoder-end-pipeline-statistics-query)
+    ((render-pass-encoder :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuComputePassEncoderWriteTimestamp" wgpu-compute-pass-encoder-write-timestamp) :void
   (compute-pass-encoder wgpu-compute-pass-encoder)
   (query-set wgpu-query-set)
   (query-index :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuComputePassEncoderWriteTimestamp" wgpu-compute-pass-encoder-write-timestamp)
+    ((compute-pass-encoder :pointer-void)
+     (query-set :pointer-void)
+     (query-index :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuRenderPassEncoderWriteTimestamp" wgpu-render-pass-encoder-write-timestamp) :void
   (render-pass-encoder wgpu-render-pass-encoder)
   (query-set wgpu-query-set)
   (query-index :uint32))
+#+(ecl)
+(ffi:def-function ("wgpuRenderPassEncoderWriteTimestamp" wgpu-render-pass-encoder-write-timestamp)
+    ((render-pass-encoder :pointer-void)
+     (query-set :pointer-void)
+     (query-index :uint32-t))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceStartGraphicsDebuggerCapture" wgpu-device-start-graphics-debugger-capture) :pointer
   (device wgpu-device))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceStartGraphicsDebuggerCapture" wgpu-device-start-graphics-debugger-capture)
+    ((device :pointer-void))
+  :result-type :pointer-void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuDeviceStopGraphicsDebuggerCapture" wgpu-device-stop-graphics-debugger-capture) :void
   (device wgpu-device))
+#+(ecl)
+(ffi:def-function ("wgpuDeviceStopGraphicsDebuggerCapture" wgpu-device-stop-graphics-debugger-capture)
+    ((device :pointer-void))
+  :result-type :void :language :c)
 
+#-(ecl)
 (defcfun ("wgpuCommandEncoderClearTexture" wgpu-command-encoder-clear-texture) :void
   (command-encoder wgpu-command-encoder)
   (texture wgpu-texture)
   (range :pointer))
+#+(ecl)
+(ffi:def-function ("wgpuCommandEncoderClearTexture" wgpu-command-encoder-clear-texture)
+    ((command-encoder :pointer-void)
+     (texture :pointer-void)
+     (range :pointer-void))
+  :result-type :void :language :c)

@@ -8,51 +8,164 @@
 ;; Opaque handle types
 ;; ---------------------------------------------------------------------
 
+#-(ecl)
 (defctype wgpu-adapter :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-adapter :pointer-void)
+
+#-(ecl)
 (defctype wgpu-bind-group :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-bind-group :pointer-void)
+
+#-(ecl)
 (defctype wgpu-bind-group-layout :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-bind-group-layout :pointer-void)
+
+#-(ecl)
 (defctype wgpu-buffer :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-buffer :pointer-void)
+
+#-(ecl)
 (defctype wgpu-command-buffer :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-command-buffer :pointer-void)
+
+#-(ecl)
 (defctype wgpu-command-encoder :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-command-encoder :pointer-void)
+
+#-(ecl)
 (defctype wgpu-compute-pass-encoder :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-compute-pass-encoder :pointer-void)
+
+#-(ecl)
 (defctype wgpu-compute-pipeline :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-compute-pipeline :pointer-void)
+
+#-(ecl)
 (defctype wgpu-device :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-device :pointer-void)
+
+#-(ecl)
 (defctype wgpu-external-texture :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-external-texture :pointer-void)
+
+#-(ecl)
 (defctype wgpu-instance :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-instance :pointer-void)
+
+#-(ecl)
 (defctype wgpu-pipeline-layout :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-pipeline-layout :pointer-void)
+
+#-(ecl)
 (defctype wgpu-query-set :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-query-set :pointer-void)
+
+#-(ecl)
 (defctype wgpu-queue :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-queue :pointer-void)
+
+#-(ecl)
 (defctype wgpu-render-bundle :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-render-bundle :pointer-void)
+
+#-(ecl)
 (defctype wgpu-render-bundle-encoder :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-render-bundle-encoder :pointer-void)
+
+#-(ecl)
 (defctype wgpu-render-pass-encoder :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-render-pass-encoder :pointer-void)
+
+#-(ecl)
 (defctype wgpu-render-pipeline :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-render-pipeline :pointer-void)
+
+#-(ecl)
 (defctype wgpu-sampler :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-sampler :pointer-void)
+
+#-(ecl)
 (defctype wgpu-shader-module :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-shader-module :pointer-void)
+
+#-(ecl)
 (defctype wgpu-surface :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-surface :pointer-void)
+
+#-(ecl)
 (defctype wgpu-texture :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-texture :pointer-void)
+
+#-(ecl)
 (defctype wgpu-texture-view :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-texture-view :pointer-void)
+
 
 ;; Type aliases
+#-(ecl)
 (defctype wgpu-flags :uint64)
+#+(ecl)
+(ffi:def-foreign-type wgpu-flags :uint64-t)
+
+#-(ecl)
 (defctype wgpu-bool :uint32)
+#+(ecl)
+(ffi:def-foreign-type wgpu-bool :uint32-t)
+
+#-(ecl)
 (defctype wgpu-proc :pointer)
+#+(ecl)
+(ffi:def-foreign-type wgpu-proc :pointer-void)
+
 
 ;; ---------------------------------------------------------------------
 ;; Enumerations
 ;; ---------------------------------------------------------------------
 
+#-(ecl)
 (defcenum wgpu-adapter-type
   (:discrete-gpu #x1)
   (:integrated-gpu #x2)
   (:cpu #x3)
   (:unknown #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-adapter-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-address-mode
   (:undefined #x0)
   (:clamp-to-edge #x1)
   (:repeat #x2)
   (:mirror-repeat #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-address-mode :int)
 
+
+#-(ecl)
 (defcenum wgpu-backend-type
   (:undefined #x0)
   (:null #x1)
@@ -63,7 +176,11 @@
   (:vulkan #x6)
   (:open-gl #x7)
   (:open-gles #x8))
+#+(ecl)
+(ffi:def-foreign-type wgpu-backend-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-blend-factor
   (:undefined #x0)
   (:zero #x1)
@@ -83,7 +200,11 @@
   (:one-minus-src1 #xF)
   (:src1-alpha #x10)
   (:one-minus-src1-alpha #x11))
+#+(ecl)
+(ffi:def-foreign-type wgpu-blend-factor :int)
 
+
+#-(ecl)
 (defcenum wgpu-blend-operation
   (:undefined #x0)
   (:add #x1)
@@ -91,24 +212,40 @@
   (:reverse-subtract #x3)
   (:min #x4)
   (:max #x5))
+#+(ecl)
+(ffi:def-foreign-type wgpu-blend-operation :int)
 
+
+#-(ecl)
 (defcenum wgpu-buffer-binding-type
   (:binding-not-used #x0)
   (:undefined #x1)
   (:uniform #x2)
   (:storage #x3)
   (:read-only-storage #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-buffer-binding-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-buffer-map-state
   (:unmapped #x1)
   (:pending #x2)
   (:mapped #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-buffer-map-state :int)
 
+
+#-(ecl)
 (defcenum wgpu-callback-mode
   (:wait-any-only #x1)
   (:allow-process-events #x2)
   (:allow-spontaneous #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-callback-mode :int)
 
+
+#-(ecl)
 (defcenum wgpu-compare-function
   (:undefined #x0)
   (:never #x1)
@@ -119,16 +256,28 @@
   (:not-equal #x6)
   (:greater-equal #x7)
   (:always #x8))
+#+(ecl)
+(ffi:def-foreign-type wgpu-compare-function :int)
 
+
+#-(ecl)
 (defcenum wgpu-compilation-info-request-status
   (:success #x1)
   (:callback-cancelled #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-compilation-info-request-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-compilation-message-type
   (:error #x1)
   (:warning #x2)
   (:info #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-compilation-message-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-component-swizzle
   (:undefined #x0)
   (:zero #x1)
@@ -137,49 +286,81 @@
   (:g #x4)
   (:b #x5)
   (:a #x6))
+#+(ecl)
+(ffi:def-foreign-type wgpu-component-swizzle :int)
 
+
+#-(ecl)
 (defcenum wgpu-composite-alpha-mode
   (:auto #x0)
   (:opaque #x1)
   (:premultiplied #x2)
   (:unpremultiplied #x3)
   (:inherit #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-composite-alpha-mode :int)
 
+
+#-(ecl)
 (defcenum wgpu-create-pipeline-async-status
   (:success #x1)
   (:callback-cancelled #x2)
   (:validation-error #x3)
   (:internal-error #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-create-pipeline-async-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-cull-mode
   (:undefined #x0)
   (:none #x1)
   (:front #x2)
   (:back #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-cull-mode :int)
 
+
+#-(ecl)
 (defcenum wgpu-device-lost-reason
   (:unknown #x1)
   (:destroyed #x2)
   (:callback-cancelled #x3)
   (:failed-creation #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-device-lost-reason :int)
 
+
+#-(ecl)
 (defcenum wgpu-error-filter
   (:validation #x1)
   (:out-of-memory #x2)
   (:internal #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-error-filter :int)
 
+
+#-(ecl)
 (defcenum wgpu-error-type
   (:no-error #x1)
   (:validation #x2)
   (:out-of-memory #x3)
   (:internal #x4)
   (:unknown #x5))
+#+(ecl)
+(ffi:def-foreign-type wgpu-error-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-feature-level
   (:undefined #x0)
   (:compatibility #x1)
   (:core #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-feature-level :int)
 
+
+#-(ecl)
 (defcenum wgpu-feature-name
   (:core-features-and-limits #x1)
   (:depth-clip-control #x2)
@@ -203,69 +384,121 @@
   (:texture-formats-tier2 #x14)
   (:primitive-index #x15)
   (:texture-component-swizzle #x16))
+#+(ecl)
+(ffi:def-foreign-type wgpu-feature-name :int)
 
+
+#-(ecl)
 (defcenum wgpu-filter-mode
   (:undefined #x0)
   (:nearest #x1)
   (:linear #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-filter-mode :int)
 
+
+#-(ecl)
 (defcenum wgpu-front-face
   (:undefined #x0)
   (:ccw #x1)
   (:cw #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-front-face :int)
 
+
+#-(ecl)
 (defcenum wgpu-index-format
   (:undefined #x0)
   (:uint16 #x1)
   (:uint32 #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-index-format :int)
 
+
+#-(ecl)
 (defcenum wgpu-instance-feature-name
   (:timed-wait-any #x1)
   (:shader-source-spirv #x2)
   (:multiple-devices-per-adapter #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-instance-feature-name :int)
 
+
+#-(ecl)
 (defcenum wgpu-load-op
   (:undefined #x0)
   (:load #x1)
   (:clear #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-load-op :int)
 
+
+#-(ecl)
 (defcenum wgpu-map-async-status
   (:success #x1)
   (:callback-cancelled #x2)
   (:error #x3)
   (:aborted #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-map-async-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-mipmap-filter-mode
   (:undefined #x0)
   (:nearest #x1)
   (:linear #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-mipmap-filter-mode :int)
 
+
+#-(ecl)
 (defcenum wgpu-optional-bool
   (:false #x0)
   (:true #x1)
   (:undefined #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-optional-bool :int)
 
+
+#-(ecl)
 (defcenum wgpu-pop-error-scope-status
   (:success #x1)
   (:callback-cancelled #x2)
   (:error #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-pop-error-scope-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-power-preference
   (:undefined #x0)
   (:low-power #x1)
   (:high-performance #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-power-preference :int)
 
+
+#-(ecl)
 (defcenum wgpu-predefined-color-space
   (:srgb #x1)
   (:display-p3 #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-predefined-color-space :int)
 
+
+#-(ecl)
 (defcenum wgpu-present-mode
   (:undefined #x0)
   (:fifo #x1)
   (:fifo-relaxed #x2)
   (:immediate #x3)
   (:mailbox #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-present-mode :int)
 
+
+#-(ecl)
 (defcenum wgpu-primitive-topology
   (:undefined #x0)
   (:point-list #x1)
@@ -273,38 +506,66 @@
   (:line-strip #x3)
   (:triangle-list #x4)
   (:triangle-strip #x5))
+#+(ecl)
+(ffi:def-foreign-type wgpu-primitive-topology :int)
 
+
+#-(ecl)
 (defcenum wgpu-query-type
   (:occlusion #x1)
   (:timestamp #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-query-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-queue-work-done-status
   (:success #x1)
   (:callback-cancelled #x2)
   (:error #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-queue-work-done-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-request-adapter-status
   (:success #x1)
   (:callback-cancelled #x2)
   (:unavailable #x3)
   (:error #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-request-adapter-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-request-device-status
   (:success #x1)
   (:callback-cancelled #x2)
   (:error #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-request-device-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-sampler-binding-type
   (:binding-not-used #x0)
   (:undefined #x1)
   (:filtering #x2)
   (:non-filtering #x3)
   (:comparison #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-sampler-binding-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-status
   (:success #x1)
   (:error #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-stencil-operation
   (:undefined #x0)
   (:keep #x1)
@@ -315,19 +576,31 @@
   (:decrement-clamp #x6)
   (:increment-wrap #x7)
   (:decrement-wrap #x8))
+#+(ecl)
+(ffi:def-foreign-type wgpu-stencil-operation :int)
 
+
+#-(ecl)
 (defcenum wgpu-storage-texture-access
   (:binding-not-used #x0)
   (:undefined #x1)
   (:write-only #x2)
   (:read-only #x3)
   (:read-write #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-storage-texture-access :int)
 
+
+#-(ecl)
 (defcenum wgpu-store-op
   (:undefined #x0)
   (:store #x1)
   (:discard #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-store-op :int)
 
+
+#-(ecl)
 (defcenum wgpu-s-type
   (:shader-source-spirv #x1)
   (:shader-source-wgsl #x2)
@@ -345,7 +618,11 @@
   (:external-texture-binding-entry #xE)
   (:compatibility-mode-limits #xF)
   (:texture-binding-view-dimension #x10))
+#+(ecl)
+(ffi:def-foreign-type wgpu-s-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-surface-get-current-texture-status
   (:success-optimal #x1)
   (:success-suboptimal #x2)
@@ -353,19 +630,31 @@
   (:outdated #x4)
   (:lost #x5)
   (:error #x6))
+#+(ecl)
+(ffi:def-foreign-type wgpu-surface-get-current-texture-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-texture-aspect
   (:undefined #x0)
   (:all #x1)
   (:stencil-only #x2)
   (:depth-only #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-texture-aspect :int)
 
+
+#-(ecl)
 (defcenum wgpu-texture-dimension
   (:undefined #x0)
   (:1-d #x1)
   (:2-d #x2)
   (:3-d #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-texture-dimension :int)
 
+
+#-(ecl)
 (defcenum wgpu-texture-format
   (:undefined #x0)
   (:r8-unorm #x1)
@@ -469,7 +758,11 @@
   (:astc12x10-unorm-srgb #x63)
   (:astc12x12-unorm #x64)
   (:astc12x12-unorm-srgb #x65))
+#+(ecl)
+(ffi:def-foreign-type wgpu-texture-format :int)
 
+
+#-(ecl)
 (defcenum wgpu-texture-sample-type
   (:binding-not-used #x0)
   (:undefined #x1)
@@ -478,7 +771,11 @@
   (:depth #x4)
   (:sint #x5)
   (:uint #x6))
+#+(ecl)
+(ffi:def-foreign-type wgpu-texture-sample-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-texture-view-dimension
   (:undefined #x0)
   (:1-d #x1)
@@ -487,11 +784,19 @@
   (:cube #x4)
   (:cube-array #x5)
   (:3-d #x6))
+#+(ecl)
+(ffi:def-foreign-type wgpu-texture-view-dimension :int)
 
+
+#-(ecl)
 (defcenum wgpu-tone-mapping-mode
   (:standard #x1)
   (:extended #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-tone-mapping-mode :int)
 
+
+#-(ecl)
 (defcenum wgpu-vertex-format
   (:uint8 #x1)
   (:uint8x2 #x2)
@@ -534,17 +839,29 @@
   (:sint32x4 #x27)
   (:unorm10_10_10_2 #x28)
   (:unorm8x4-bgra #x29))
+#+(ecl)
+(ffi:def-foreign-type wgpu-vertex-format :int)
 
+
+#-(ecl)
 (defcenum wgpu-vertex-step-mode
   (:undefined #x0)
   (:vertex #x1)
   (:instance #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-vertex-step-mode :int)
 
+
+#-(ecl)
 (defcenum wgpu-wait-status
   (:success #x1)
   (:timed-out #x2)
   (:error #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-wait-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-wgsl-language-feature-name
   (:readonly-and-readwrite-storage-textures #x1)
   (:packed4x8-integer-dot-product #x2)
@@ -556,7 +873,11 @@
   (:subgroup-uniformity #x8)
   (:texture-formats-tier1 #x9)
   (:linear-indexing #xA))
+#+(ecl)
+(ffi:def-foreign-type wgpu-wgsl-language-feature-name :int)
 
+
+#-(ecl)
 (defcenum wgpu-native-s-type
   (:wgpus-type_device-extras #x30001)
   (:wgpus-type_native-limits #x30002)
@@ -569,10 +890,18 @@
   (:wgpus-type_surface-configuration-extras #x3000A)
   (:wgpus-type_surface-source-swap-chain-panel #x3000B)
   (:wgpus-type_primitive-state-extras #x3000C))
+#+(ecl)
+(ffi:def-foreign-type wgpu-native-s-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-native-surface-get-current-texture-status
   (:wgpu-surface-get-current-texture-status_occluded #x30001))
+#+(ecl)
+(ffi:def-foreign-type wgpu-native-surface-get-current-texture-status :int)
 
+
+#-(ecl)
 (defcenum wgpu-native-feature
   (:immediates #x30001)
   (:texture-adapter-specific-format-features #x30002)
@@ -621,7 +950,11 @@
   (:acceleration-structure-binding-array #x3003E)
   (:memory-decoration-coherent #x3003F)
   (:memory-decoration-volatile #x30040))
+#+(ecl)
+(ffi:def-foreign-type wgpu-native-feature :int)
 
+
+#-(ecl)
 (defcenum wgpu-log-level
   (:off #x0)
   (:error #x1)
@@ -629,28 +962,48 @@
   (:info #x3)
   (:debug #x4)
   (:trace #x5))
+#+(ecl)
+(ffi:def-foreign-type wgpu-log-level :int)
 
+
+#-(ecl)
 (defcenum wgpu-dx12-compiler
   (:undefined #x0)
   (:fxc #x1)
   (:dxc #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-dx12-compiler :int)
 
+
+#-(ecl)
 (defcenum wgpu-gles3-minor-version
   (:automatic #x0)
   (:version0 #x1)
   (:version1 #x2)
   (:version2 #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-gles3-minor-version :int)
 
+
+#-(ecl)
 (defcenum wgpu-pipeline-statistic-name
   (:vertex-shader-invocations #x0)
   (:clipper-invocations #x1)
   (:clipper-primitives-out #x2)
   (:fragment-shader-invocations #x3)
   (:compute-shader-invocations #x4))
+#+(ecl)
+(ffi:def-foreign-type wgpu-pipeline-statistic-name :int)
 
+
+#-(ecl)
 (defcenum wgpu-native-query-type
   (:pipeline-statistics #x30000))
+#+(ecl)
+(ffi:def-foreign-type wgpu-native-query-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-dxc-max-shader-model
   (:v6_0 #x0)
   (:v6_1 #x1)
@@ -660,27 +1013,47 @@
   (:v6_5 #x5)
   (:v6_6 #x6)
   (:v6_7 #x7))
+#+(ecl)
+(ffi:def-foreign-type wgpu-dxc-max-shader-model :int)
 
+
+#-(ecl)
 (defcenum wgpu-gl-fence-behaviour
   (:normal #x0)
   (:auto-finish #x1))
+#+(ecl)
+(ffi:def-foreign-type wgpu-gl-fence-behaviour :int)
 
+
+#-(ecl)
 (defcenum wgpu-dx12-swapchain-kind
   (:undefined #x0)
   (:dxgi-from-hwnd #x1)
   (:dxgi-from-visual #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-dx12-swapchain-kind :int)
 
+
+#-(ecl)
 (defcenum wgpu-native-display-handle-type
   (:none #x0)
   (:xlib #x1)
   (:xcb #x2)
   (:wayland #x3))
+#+(ecl)
+(ffi:def-foreign-type wgpu-native-display-handle-type :int)
 
+
+#-(ecl)
 (defcenum wgpu-polygon-mode
   (:fill #x0)
   (:line #x1)
   (:point #x2))
+#+(ecl)
+(ffi:def-foreign-type wgpu-polygon-mode :int)
 
+
+#-(ecl)
 (defcenum wgpu-native-texture-format
   (:r16-unorm #x30001)
   (:r16-snorm #x30002)
@@ -690,6 +1063,9 @@
   (:rgba16-snorm #x30006)
   (:nv12 #x30007)
   (:p010 #x30008))
+#+(ecl)
+(ffi:def-foreign-type wgpu-native-texture-format :int)
+
 
 
 ;; ---------------------------------------------------------------------
@@ -748,83 +1124,185 @@
 ;; Structures
 ;; ---------------------------------------------------------------------
 
+#-(ecl)
 (defcstruct wgpu-string-view
   (data :pointer)
   (length :size))
+#+(ecl)
+(ffi:def-struct wgpu-string-view
+  (data :pointer-void)
+  (length :cl-index))
 
+
+#-(ecl)
 (defcstruct wgpu-chained-struct
   (next :pointer)
   (s-type wgpu-s-type))
+#+(ecl)
+(ffi:def-struct wgpu-chained-struct
+  (next :pointer-void)
+  (s-type :int))
 
+
+#-(ecl)
 (defcstruct wgpu-buffer-map-callback-info
   (next-in-chain :pointer)
   (mode wgpu-callback-mode)
   (callback :pointer)
   (userdata1 :pointer)
   (userdata2 :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-buffer-map-callback-info
+  (next-in-chain :pointer-void)
+  (mode :int)
+  (callback :pointer-void)
+  (userdata1 :pointer-void)
+  (userdata2 :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-compilation-info-callback-info
   (next-in-chain :pointer)
   (mode wgpu-callback-mode)
   (callback :pointer)
   (userdata1 :pointer)
   (userdata2 :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-compilation-info-callback-info
+  (next-in-chain :pointer-void)
+  (mode :int)
+  (callback :pointer-void)
+  (userdata1 :pointer-void)
+  (userdata2 :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-create-compute-pipeline-async-callback-info
   (next-in-chain :pointer)
   (mode wgpu-callback-mode)
   (callback :pointer)
   (userdata1 :pointer)
   (userdata2 :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-create-compute-pipeline-async-callback-info
+  (next-in-chain :pointer-void)
+  (mode :int)
+  (callback :pointer-void)
+  (userdata1 :pointer-void)
+  (userdata2 :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-create-render-pipeline-async-callback-info
   (next-in-chain :pointer)
   (mode wgpu-callback-mode)
   (callback :pointer)
   (userdata1 :pointer)
   (userdata2 :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-create-render-pipeline-async-callback-info
+  (next-in-chain :pointer-void)
+  (mode :int)
+  (callback :pointer-void)
+  (userdata1 :pointer-void)
+  (userdata2 :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-device-lost-callback-info
   (next-in-chain :pointer)
   (mode wgpu-callback-mode)
   (callback :pointer)
   (userdata1 :pointer)
   (userdata2 :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-device-lost-callback-info
+  (next-in-chain :pointer-void)
+  (mode :int)
+  (callback :pointer-void)
+  (userdata1 :pointer-void)
+  (userdata2 :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-pop-error-scope-callback-info
   (next-in-chain :pointer)
   (mode wgpu-callback-mode)
   (callback :pointer)
   (userdata1 :pointer)
   (userdata2 :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-pop-error-scope-callback-info
+  (next-in-chain :pointer-void)
+  (mode :int)
+  (callback :pointer-void)
+  (userdata1 :pointer-void)
+  (userdata2 :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-queue-work-done-callback-info
   (next-in-chain :pointer)
   (mode wgpu-callback-mode)
   (callback :pointer)
   (userdata1 :pointer)
   (userdata2 :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-queue-work-done-callback-info
+  (next-in-chain :pointer-void)
+  (mode :int)
+  (callback :pointer-void)
+  (userdata1 :pointer-void)
+  (userdata2 :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-request-adapter-callback-info
   (next-in-chain :pointer)
   (mode wgpu-callback-mode)
   (callback :pointer)
   (userdata1 :pointer)
   (userdata2 :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-request-adapter-callback-info
+  (next-in-chain :pointer-void)
+  (mode :int)
+  (callback :pointer-void)
+  (userdata1 :pointer-void)
+  (userdata2 :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-request-device-callback-info
   (next-in-chain :pointer)
   (mode wgpu-callback-mode)
   (callback :pointer)
   (userdata1 :pointer)
   (userdata2 :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-request-device-callback-info
+  (next-in-chain :pointer-void)
+  (mode :int)
+  (callback :pointer-void)
+  (userdata1 :pointer-void)
+  (userdata2 :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-uncaptured-error-callback-info
   (next-in-chain :pointer)
   (callback :pointer)
   (userdata1 :pointer)
   (userdata2 :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-uncaptured-error-callback-info
+  (next-in-chain :pointer-void)
+  (callback :pointer-void)
+  (userdata1 :pointer-void)
+  (userdata2 :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-adapter-info
   (next-in-chain :pointer)
   (vendor (:struct wgpu-string-view))
@@ -837,46 +1315,114 @@
   (device-id :uint32)
   (subgroup-min-size :uint32)
   (subgroup-max-size :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-adapter-info
+  (next-in-chain :pointer-void)
+  (vendor :wgpu-string-view)
+  (architecture :wgpu-string-view)
+  (device :wgpu-string-view)
+  (description :wgpu-string-view)
+  (backend-type :int)
+  (adapter-type :int)
+  (vendor-id :uint32-t)
+  (device-id :uint32-t)
+  (subgroup-min-size :uint32-t)
+  (subgroup-max-size :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-blend-component
   (operation wgpu-blend-operation)
   (src-factor wgpu-blend-factor)
   (dst-factor wgpu-blend-factor))
+#+(ecl)
+(ffi:def-struct wgpu-blend-component
+  (operation :int)
+  (src-factor :int)
+  (dst-factor :int))
 
+
+#-(ecl)
 (defcstruct wgpu-buffer-binding-layout
   (next-in-chain :pointer)
   (type wgpu-buffer-binding-type)
   (has-dynamic-offset wgpu-bool)
   (min-binding-size :uint64))
+#+(ecl)
+(ffi:def-struct wgpu-buffer-binding-layout
+  (next-in-chain :pointer-void)
+  (type :int)
+  (has-dynamic-offset :uint32-t)
+  (min-binding-size :uint64-t))
 
+
+#-(ecl)
 (defcstruct wgpu-buffer-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
   (usage wgpu-flags)
   (size :uint64)
   (mapped-at-creation wgpu-bool))
+#+(ecl)
+(ffi:def-struct wgpu-buffer-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (usage :int)
+  (size :uint64-t)
+  (mapped-at-creation :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-color
   (r :double)
   (g :double)
   (b :double)
   (a :double))
+#+(ecl)
+(ffi:def-struct wgpu-color
+  (r :double)
+  (g :double)
+  (b :double)
+  (a :double))
 
+
+#-(ecl)
 (defcstruct wgpu-command-buffer-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view)))
+#+(ecl)
+(ffi:def-struct wgpu-command-buffer-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view))
 
+
+#-(ecl)
 (defcstruct wgpu-command-encoder-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view)))
+#+(ecl)
+(ffi:def-struct wgpu-command-encoder-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view))
 
+
+#-(ecl)
 (defcstruct wgpu-compatibility-mode-limits
   (chain (:struct wgpu-chained-struct))
   (max-storage-buffers-in-vertex-stage :uint32)
   (max-storage-textures-in-vertex-stage :uint32)
   (max-storage-buffers-in-fragment-stage :uint32)
   (max-storage-textures-in-fragment-stage :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-compatibility-mode-limits
+  (chain :wgpu-chained-struct)
+  (max-storage-buffers-in-vertex-stage :uint32-t)
+  (max-storage-textures-in-vertex-stage :uint32-t)
+  (max-storage-buffers-in-fragment-stage :uint32-t)
+  (max-storage-textures-in-fragment-stage :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-compilation-message
   (next-in-chain :pointer)
   (message (:struct wgpu-string-view))
@@ -885,55 +1431,134 @@
   (line-pos :uint64)
   (offset :uint64)
   (length :uint64))
+#+(ecl)
+(ffi:def-struct wgpu-compilation-message
+  (next-in-chain :pointer-void)
+  (message :wgpu-string-view)
+  (type :int)
+  (line-num :uint64-t)
+  (line-pos :uint64-t)
+  (offset :uint64-t)
+  (length :uint64-t))
 
+
+#-(ecl)
 (defcstruct wgpu-constant-entry
   (next-in-chain :pointer)
   (key (:struct wgpu-string-view))
   (value :double))
+#+(ecl)
+(ffi:def-struct wgpu-constant-entry
+  (next-in-chain :pointer-void)
+  (key :wgpu-string-view)
+  (value :double))
 
+
+#-(ecl)
 (defcstruct wgpu-extent3-d
   (width :uint32)
   (height :uint32)
   (depth-or-array-layers :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-extent3-d
+  (width :uint32-t)
+  (height :uint32-t)
+  (depth-or-array-layers :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-external-texture-binding-entry
   (chain (:struct wgpu-chained-struct))
   (external-texture wgpu-external-texture))
+#+(ecl)
+(ffi:def-struct wgpu-external-texture-binding-entry
+  (chain :wgpu-chained-struct)
+  (external-texture :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-external-texture-binding-layout
   (chain (:struct wgpu-chained-struct)))
+#+(ecl)
+(ffi:def-struct wgpu-external-texture-binding-layout
+  (chain :wgpu-chained-struct))
 
+
+#-(ecl)
 (defcstruct wgpu-future
   (id :uint64))
+#+(ecl)
+(ffi:def-struct wgpu-future
+  (id :uint64-t))
 
+
+#-(ecl)
 (defcstruct wgpu-instance-limits
   (next-in-chain :pointer)
   (timed-wait-any-max-count :size))
+#+(ecl)
+(ffi:def-struct wgpu-instance-limits
+  (next-in-chain :pointer-void)
+  (timed-wait-any-max-count :cl-index))
 
+
+#-(ecl)
 (defcstruct wgpu-multisample-state
   (next-in-chain :pointer)
   (count :uint32)
   (mask :uint32)
   (alpha-to-coverage-enabled wgpu-bool))
+#+(ecl)
+(ffi:def-struct wgpu-multisample-state
+  (next-in-chain :pointer-void)
+  (count :uint32-t)
+  (mask :uint32-t)
+  (alpha-to-coverage-enabled :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-origin3-d
   (x :uint32)
   (y :uint32)
   (z :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-origin3-d
+  (x :uint32-t)
+  (y :uint32-t)
+  (z :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-pass-timestamp-writes
   (next-in-chain :pointer)
   (query-set wgpu-query-set)
   (beginning-of-pass-write-index :uint32)
   (end-of-pass-write-index :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-pass-timestamp-writes
+  (next-in-chain :pointer-void)
+  (query-set :pointer-void)
+  (beginning-of-pass-write-index :uint32-t)
+  (end-of-pass-write-index :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-pipeline-layout-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
   (bind-group-layout-count :size)
   (bind-group-layouts :pointer)
   (immediate-size :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-pipeline-layout-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (bind-group-layout-count :cl-index)
+  (bind-group-layouts :pointer-void)
+  (immediate-size :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-primitive-state
   (next-in-chain :pointer)
   (topology wgpu-primitive-topology)
@@ -941,21 +1566,51 @@
   (front-face wgpu-front-face)
   (cull-mode wgpu-cull-mode)
   (unclipped-depth wgpu-bool))
+#+(ecl)
+(ffi:def-struct wgpu-primitive-state
+  (next-in-chain :pointer-void)
+  (topology :int)
+  (strip-index-format :int)
+  (front-face :int)
+  (cull-mode :int)
+  (unclipped-depth :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-query-set-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
   (type wgpu-query-type)
   (count :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-query-set-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (type :int)
+  (count :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-queue-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view)))
+#+(ecl)
+(ffi:def-struct wgpu-queue-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view))
 
+
+#-(ecl)
 (defcstruct wgpu-render-bundle-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view)))
+#+(ecl)
+(ffi:def-struct wgpu-render-bundle-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view))
 
+
+#-(ecl)
 (defcstruct wgpu-render-bundle-encoder-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
@@ -965,7 +1620,19 @@
   (sample-count :uint32)
   (depth-read-only wgpu-bool)
   (stencil-read-only wgpu-bool))
+#+(ecl)
+(ffi:def-struct wgpu-render-bundle-encoder-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (color-format-count :cl-index)
+  (color-formats :pointer-void)
+  (depth-stencil-format :int)
+  (sample-count :uint32-t)
+  (depth-read-only :uint32-t)
+  (stencil-read-only :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-render-pass-depth-stencil-attachment
   (next-in-chain :pointer)
   (view wgpu-texture-view)
@@ -977,19 +1644,51 @@
   (stencil-store-op wgpu-store-op)
   (stencil-clear-value :uint32)
   (stencil-read-only wgpu-bool))
+#+(ecl)
+(ffi:def-struct wgpu-render-pass-depth-stencil-attachment
+  (next-in-chain :pointer-void)
+  (view :pointer-void)
+  (depth-load-op :int)
+  (depth-store-op :int)
+  (depth-clear-value :float)
+  (depth-read-only :uint32-t)
+  (stencil-load-op :int)
+  (stencil-store-op :int)
+  (stencil-clear-value :uint32-t)
+  (stencil-read-only :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-render-pass-max-draw-count
   (chain (:struct wgpu-chained-struct))
   (max-draw-count :uint64))
+#+(ecl)
+(ffi:def-struct wgpu-render-pass-max-draw-count
+  (chain :wgpu-chained-struct)
+  (max-draw-count :uint64-t))
 
+
+#-(ecl)
 (defcstruct wgpu-request-adapter-web-xr-options
   (chain (:struct wgpu-chained-struct))
   (xr-compatible wgpu-bool))
+#+(ecl)
+(ffi:def-struct wgpu-request-adapter-web-xr-options
+  (chain :wgpu-chained-struct)
+  (xr-compatible :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-sampler-binding-layout
   (next-in-chain :pointer)
   (type wgpu-sampler-binding-type))
+#+(ecl)
+(ffi:def-struct wgpu-sampler-binding-layout
+  (next-in-chain :pointer-void)
+  (type :int))
 
+
+#-(ecl)
 (defcstruct wgpu-sampler-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
@@ -1003,40 +1702,103 @@
   (lod-max-clamp :float)
   (compare wgpu-compare-function)
   (max-anisotropy :uint16))
+#+(ecl)
+(ffi:def-struct wgpu-sampler-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (address-mode-u :int)
+  (address-mode-v :int)
+  (address-mode-w :int)
+  (mag-filter :int)
+  (min-filter :int)
+  (mipmap-filter :int)
+  (lod-min-clamp :float)
+  (lod-max-clamp :float)
+  (compare :int)
+  (max-anisotropy :uint16-t))
 
+
+#-(ecl)
 (defcstruct wgpu-shader-source-spirv
   (chain (:struct wgpu-chained-struct))
   (code-size :uint32)
   (code :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-shader-source-spirv
+  (chain :wgpu-chained-struct)
+  (code-size :uint32-t)
+  (code :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-shader-source-wgsl
   (chain (:struct wgpu-chained-struct))
   (code (:struct wgpu-string-view)))
+#+(ecl)
+(ffi:def-struct wgpu-shader-source-wgsl
+  (chain :wgpu-chained-struct)
+  (code :wgpu-string-view))
 
+
+#-(ecl)
 (defcstruct wgpu-stencil-face-state
   (compare wgpu-compare-function)
   (fail-op wgpu-stencil-operation)
   (depth-fail-op wgpu-stencil-operation)
   (pass-op wgpu-stencil-operation))
+#+(ecl)
+(ffi:def-struct wgpu-stencil-face-state
+  (compare :int)
+  (fail-op :int)
+  (depth-fail-op :int)
+  (pass-op :int))
 
+
+#-(ecl)
 (defcstruct wgpu-storage-texture-binding-layout
   (next-in-chain :pointer)
   (access wgpu-storage-texture-access)
   (format wgpu-texture-format)
   (view-dimension wgpu-texture-view-dimension))
+#+(ecl)
+(ffi:def-struct wgpu-storage-texture-binding-layout
+  (next-in-chain :pointer-void)
+  (access :int)
+  (format :int)
+  (view-dimension :int))
 
+
+#-(ecl)
 (defcstruct wgpu-supported-features
   (feature-count :size)
   (features :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-supported-features
+  (feature-count :cl-index)
+  (features :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-supported-instance-features
   (feature-count :size)
   (features :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-supported-instance-features
+  (feature-count :cl-index)
+  (features :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-supported-wgsl-language-features
   (feature-count :size)
   (features :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-supported-wgsl-language-features
+  (feature-count :cl-index)
+  (features :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-capabilities
   (next-in-chain :pointer)
   (usages wgpu-flags)
@@ -1046,12 +1808,31 @@
   (present-modes :pointer)
   (alpha-mode-count :size)
   (alpha-modes :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-surface-capabilities
+  (next-in-chain :pointer-void)
+  (usages :int)
+  (format-count :cl-index)
+  (formats :pointer-void)
+  (present-mode-count :cl-index)
+  (present-modes :pointer-void)
+  (alpha-mode-count :cl-index)
+  (alpha-modes :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-color-management
   (chain (:struct wgpu-chained-struct))
   (color-space wgpu-predefined-color-space)
   (tone-mapping-mode wgpu-tone-mapping-mode))
+#+(ecl)
+(ffi:def-struct wgpu-surface-color-management
+  (chain :wgpu-chained-struct)
+  (color-space :int)
+  (tone-mapping-mode :int))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-configuration
   (next-in-chain :pointer)
   (device wgpu-device)
@@ -1063,67 +1844,165 @@
   (view-formats :pointer)
   (alpha-mode wgpu-composite-alpha-mode)
   (present-mode wgpu-present-mode))
+#+(ecl)
+(ffi:def-struct wgpu-surface-configuration
+  (next-in-chain :pointer-void)
+  (device :pointer-void)
+  (format :int)
+  (usage :int)
+  (width :uint32-t)
+  (height :uint32-t)
+  (view-format-count :cl-index)
+  (view-formats :pointer-void)
+  (alpha-mode :int)
+  (present-mode :int))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-source-android-native-window
   (chain (:struct wgpu-chained-struct))
   (window :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-surface-source-android-native-window
+  (chain :wgpu-chained-struct)
+  (window :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-source-metal-layer
   (chain (:struct wgpu-chained-struct))
   (layer :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-surface-source-metal-layer
+  (chain :wgpu-chained-struct)
+  (layer :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-source-wayland-surface
   (chain (:struct wgpu-chained-struct))
   (display :pointer)
   (surface :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-surface-source-wayland-surface
+  (chain :wgpu-chained-struct)
+  (display :pointer-void)
+  (surface :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-source-windows-hwnd
   (chain (:struct wgpu-chained-struct))
   (hinstance :pointer)
   (hwnd :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-surface-source-windows-hwnd
+  (chain :wgpu-chained-struct)
+  (hinstance :pointer-void)
+  (hwnd :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-source-xcb-window
   (chain (:struct wgpu-chained-struct))
   (connection :pointer)
   (window :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-surface-source-xcb-window
+  (chain :wgpu-chained-struct)
+  (connection :pointer-void)
+  (window :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-source-xlib-window
   (chain (:struct wgpu-chained-struct))
   (display :pointer)
   (window :uint64))
+#+(ecl)
+(ffi:def-struct wgpu-surface-source-xlib-window
+  (chain :wgpu-chained-struct)
+  (display :pointer-void)
+  (window :uint64-t))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-texture
   (next-in-chain :pointer)
   (texture wgpu-texture)
   (status wgpu-surface-get-current-texture-status))
+#+(ecl)
+(ffi:def-struct wgpu-surface-texture
+  (next-in-chain :pointer-void)
+  (texture :pointer-void)
+  (status :int))
 
+
+#-(ecl)
 (defcstruct wgpu-texel-copy-buffer-layout
   (offset :uint64)
   (bytes-per-row :uint32)
   (rows-per-image :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-texel-copy-buffer-layout
+  (offset :uint64-t)
+  (bytes-per-row :uint32-t)
+  (rows-per-image :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-texture-binding-layout
   (next-in-chain :pointer)
   (sample-type wgpu-texture-sample-type)
   (view-dimension wgpu-texture-view-dimension)
   (multisampled wgpu-bool))
+#+(ecl)
+(ffi:def-struct wgpu-texture-binding-layout
+  (next-in-chain :pointer-void)
+  (sample-type :int)
+  (view-dimension :int)
+  (multisampled :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-texture-binding-view-dimension
   (chain (:struct wgpu-chained-struct))
   (texture-binding-view-dimension wgpu-texture-view-dimension))
+#+(ecl)
+(ffi:def-struct wgpu-texture-binding-view-dimension
+  (chain :wgpu-chained-struct)
+  (texture-binding-view-dimension :int))
 
+
+#-(ecl)
 (defcstruct wgpu-texture-component-swizzle
   (r wgpu-component-swizzle)
   (g wgpu-component-swizzle)
   (b wgpu-component-swizzle)
   (a wgpu-component-swizzle))
+#+(ecl)
+(ffi:def-struct wgpu-texture-component-swizzle
+  (r :int)
+  (g :int)
+  (b :int)
+  (a :int))
 
+
+#-(ecl)
 (defcstruct wgpu-vertex-attribute
   (next-in-chain :pointer)
   (format wgpu-vertex-format)
   (offset :uint64)
   (shader-location :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-vertex-attribute
+  (next-in-chain :pointer-void)
+  (format :int)
+  (offset :uint64-t)
+  (shader-location :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-bind-group-entry
   (next-in-chain :pointer)
   (binding :uint32)
@@ -1132,7 +2011,18 @@
   (size :uint64)
   (sampler wgpu-sampler)
   (texture-view wgpu-texture-view))
+#+(ecl)
+(ffi:def-struct wgpu-bind-group-entry
+  (next-in-chain :pointer-void)
+  (binding :uint32-t)
+  (buffer :pointer-void)
+  (offset :uint64-t)
+  (size :uint64-t)
+  (sampler :pointer-void)
+  (texture-view :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-bind-group-layout-entry
   (next-in-chain :pointer)
   (binding :uint32)
@@ -1142,28 +2032,69 @@
   (sampler (:struct wgpu-sampler-binding-layout))
   (texture (:struct wgpu-texture-binding-layout))
   (storage-texture (:struct wgpu-storage-texture-binding-layout)))
+#+(ecl)
+(ffi:def-struct wgpu-bind-group-layout-entry
+  (next-in-chain :pointer-void)
+  (binding :uint32-t)
+  (visibility :int)
+  (binding-array-size :uint32-t)
+  (buffer :wgpu-buffer-binding-layout)
+  (sampler :wgpu-sampler-binding-layout)
+  (texture :wgpu-texture-binding-layout)
+  (storage-texture :wgpu-storage-texture-binding-layout))
 
+
+#-(ecl)
 (defcstruct wgpu-blend-state
   (color (:struct wgpu-blend-component))
   (alpha (:struct wgpu-blend-component)))
+#+(ecl)
+(ffi:def-struct wgpu-blend-state
+  (color :wgpu-blend-component)
+  (alpha :wgpu-blend-component))
 
+
+#-(ecl)
 (defcstruct wgpu-compilation-info
   (next-in-chain :pointer)
   (message-count :size)
   (messages :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-compilation-info
+  (next-in-chain :pointer-void)
+  (message-count :cl-index)
+  (messages :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-compute-pass-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
   (timestamp-writes :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-compute-pass-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (timestamp-writes :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-compute-state
   (next-in-chain :pointer)
   (module wgpu-shader-module)
   (entry-point (:struct wgpu-string-view))
   (constant-count :size)
   (constants :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-compute-state
+  (next-in-chain :pointer-void)
+  (module :pointer-void)
+  (entry-point :wgpu-string-view)
+  (constant-count :cl-index)
+  (constants :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-depth-stencil-state
   (next-in-chain :pointer)
   (format wgpu-texture-format)
@@ -1176,17 +2107,46 @@
   (depth-bias :int32)
   (depth-bias-slope-scale :float)
   (depth-bias-clamp :float))
+#+(ecl)
+(ffi:def-struct wgpu-depth-stencil-state
+  (next-in-chain :pointer-void)
+  (format :int)
+  (depth-write-enabled :int)
+  (depth-compare :int)
+  (stencil-front :wgpu-stencil-face-state)
+  (stencil-back :wgpu-stencil-face-state)
+  (stencil-read-mask :uint32-t)
+  (stencil-write-mask :uint32-t)
+  (depth-bias :int32-t)
+  (depth-bias-slope-scale :float)
+  (depth-bias-clamp :float))
 
+
+#-(ecl)
 (defcstruct wgpu-future-wait-info
   (future (:struct wgpu-future))
   (completed wgpu-bool))
+#+(ecl)
+(ffi:def-struct wgpu-future-wait-info
+  (future :wgpu-future)
+  (completed :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-instance-descriptor
   (next-in-chain :pointer)
   (required-feature-count :size)
   (required-features :pointer)
   (required-limits :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-instance-descriptor
+  (next-in-chain :pointer-void)
+  (required-feature-count :cl-index)
+  (required-features :pointer-void)
+  (required-limits :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-limits
   (next-in-chain :pointer)
   (max-texture-dimension1-d :uint32)
@@ -1221,7 +2181,44 @@
   (max-compute-workgroup-size-z :uint32)
   (max-compute-workgroups-per-dimension :uint32)
   (max-immediate-size :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-limits
+  (next-in-chain :pointer-void)
+  (max-texture-dimension1-d :uint32-t)
+  (max-texture-dimension2-d :uint32-t)
+  (max-texture-dimension3-d :uint32-t)
+  (max-texture-array-layers :uint32-t)
+  (max-bind-groups :uint32-t)
+  (max-bind-groups-plus-vertex-buffers :uint32-t)
+  (max-bindings-per-bind-group :uint32-t)
+  (max-dynamic-uniform-buffers-per-pipeline-layout :uint32-t)
+  (max-dynamic-storage-buffers-per-pipeline-layout :uint32-t)
+  (max-sampled-textures-per-shader-stage :uint32-t)
+  (max-samplers-per-shader-stage :uint32-t)
+  (max-storage-buffers-per-shader-stage :uint32-t)
+  (max-storage-textures-per-shader-stage :uint32-t)
+  (max-uniform-buffers-per-shader-stage :uint32-t)
+  (max-uniform-buffer-binding-size :uint64-t)
+  (max-storage-buffer-binding-size :uint64-t)
+  (min-uniform-buffer-offset-alignment :uint32-t)
+  (min-storage-buffer-offset-alignment :uint32-t)
+  (max-vertex-buffers :uint32-t)
+  (max-buffer-size :uint64-t)
+  (max-vertex-attributes :uint32-t)
+  (max-vertex-buffer-array-stride :uint32-t)
+  (max-inter-stage-shader-variables :uint32-t)
+  (max-color-attachments :uint32-t)
+  (max-color-attachment-bytes-per-sample :uint32-t)
+  (max-compute-workgroup-storage-size :uint32-t)
+  (max-compute-invocations-per-workgroup :uint32-t)
+  (max-compute-workgroup-size-x :uint32-t)
+  (max-compute-workgroup-size-y :uint32-t)
+  (max-compute-workgroup-size-z :uint32-t)
+  (max-compute-workgroups-per-dimension :uint32-t)
+  (max-immediate-size :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-render-pass-color-attachment
   (next-in-chain :pointer)
   (view wgpu-texture-view)
@@ -1230,7 +2227,18 @@
   (load-op wgpu-load-op)
   (store-op wgpu-store-op)
   (clear-value (:struct wgpu-color)))
+#+(ecl)
+(ffi:def-struct wgpu-render-pass-color-attachment
+  (next-in-chain :pointer-void)
+  (view :pointer-void)
+  (depth-slice :uint32-t)
+  (resolve-target :pointer-void)
+  (load-op :int)
+  (store-op :int)
+  (clear-value :wgpu-color))
 
+
+#-(ecl)
 (defcstruct wgpu-request-adapter-options
   (next-in-chain :pointer)
   (feature-level wgpu-feature-level)
@@ -1238,29 +2246,71 @@
   (force-fallback-adapter wgpu-bool)
   (backend-type wgpu-backend-type)
   (compatible-surface wgpu-surface))
+#+(ecl)
+(ffi:def-struct wgpu-request-adapter-options
+  (next-in-chain :pointer-void)
+  (feature-level :int)
+  (power-preference :int)
+  (force-fallback-adapter :uint32-t)
+  (backend-type :int)
+  (compatible-surface :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-shader-module-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view)))
+#+(ecl)
+(ffi:def-struct wgpu-shader-module-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view)))
+#+(ecl)
+(ffi:def-struct wgpu-surface-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view))
 
+
+#-(ecl)
 (defcstruct wgpu-texel-copy-buffer-info
   (layout (:struct wgpu-texel-copy-buffer-layout))
   (buffer wgpu-buffer))
+#+(ecl)
+(ffi:def-struct wgpu-texel-copy-buffer-info
+  (layout :wgpu-texel-copy-buffer-layout)
+  (buffer :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-texel-copy-texture-info
   (texture wgpu-texture)
   (mip-level :uint32)
   (origin (:struct wgpu-origin3-d))
   (aspect wgpu-texture-aspect))
+#+(ecl)
+(ffi:def-struct wgpu-texel-copy-texture-info
+  (texture :pointer-void)
+  (mip-level :uint32-t)
+  (origin :wgpu-origin3-d)
+  (aspect :int))
 
+
+#-(ecl)
 (defcstruct wgpu-texture-component-swizzle-descriptor
   (chain (:struct wgpu-chained-struct))
   (swizzle (:struct wgpu-texture-component-swizzle)))
+#+(ecl)
+(ffi:def-struct wgpu-texture-component-swizzle-descriptor
+  (chain :wgpu-chained-struct)
+  (swizzle :wgpu-texture-component-swizzle))
 
+
+#-(ecl)
 (defcstruct wgpu-texture-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
@@ -1272,39 +2322,95 @@
   (sample-count :uint32)
   (view-format-count :size)
   (view-formats :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-texture-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (usage :int)
+  (dimension :int)
+  (size :wgpu-extent3-d)
+  (format :int)
+  (mip-level-count :uint32-t)
+  (sample-count :uint32-t)
+  (view-format-count :cl-index)
+  (view-formats :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-vertex-buffer-layout
   (next-in-chain :pointer)
   (step-mode wgpu-vertex-step-mode)
   (array-stride :uint64)
   (attribute-count :size)
   (attributes :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-vertex-buffer-layout
+  (next-in-chain :pointer-void)
+  (step-mode :int)
+  (array-stride :uint64-t)
+  (attribute-count :cl-index)
+  (attributes :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-bind-group-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
   (layout wgpu-bind-group-layout)
   (entry-count :size)
   (entries :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-bind-group-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (layout :pointer-void)
+  (entry-count :cl-index)
+  (entries :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-bind-group-layout-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
   (entry-count :size)
   (entries :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-bind-group-layout-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (entry-count :cl-index)
+  (entries :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-color-target-state
   (next-in-chain :pointer)
   (format wgpu-texture-format)
   (blend :pointer)
   (write-mask wgpu-flags))
+#+(ecl)
+(ffi:def-struct wgpu-color-target-state
+  (next-in-chain :pointer-void)
+  (format :int)
+  (blend :pointer-void)
+  (write-mask :int))
 
+
+#-(ecl)
 (defcstruct wgpu-compute-pipeline-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
   (layout wgpu-pipeline-layout)
   (compute (:struct wgpu-compute-state)))
+#+(ecl)
+(ffi:def-struct wgpu-compute-pipeline-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (layout :pointer-void)
+  (compute :wgpu-compute-state))
 
+
+#-(ecl)
 (defcstruct wgpu-device-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
@@ -1314,7 +2420,19 @@
   (default-queue (:struct wgpu-queue-descriptor))
   (device-lost-callback-info (:struct wgpu-device-lost-callback-info))
   (uncaptured-error-callback-info (:struct wgpu-uncaptured-error-callback-info)))
+#+(ecl)
+(ffi:def-struct wgpu-device-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (required-feature-count :cl-index)
+  (required-features :pointer-void)
+  (required-limits :pointer-void)
+  (default-queue :wgpu-queue-descriptor)
+  (device-lost-callback-info :wgpu-device-lost-callback-info)
+  (uncaptured-error-callback-info :wgpu-uncaptured-error-callback-info))
 
+
+#-(ecl)
 (defcstruct wgpu-render-pass-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
@@ -1323,7 +2441,18 @@
   (depth-stencil-attachment :pointer)
   (occlusion-query-set wgpu-query-set)
   (timestamp-writes :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-render-pass-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (color-attachment-count :cl-index)
+  (color-attachments :pointer-void)
+  (depth-stencil-attachment :pointer-void)
+  (occlusion-query-set :pointer-void)
+  (timestamp-writes :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-texture-view-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
@@ -1335,7 +2464,21 @@
   (array-layer-count :uint32)
   (aspect wgpu-texture-aspect)
   (usage wgpu-flags))
+#+(ecl)
+(ffi:def-struct wgpu-texture-view-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (format :int)
+  (dimension :int)
+  (base-mip-level :uint32-t)
+  (mip-level-count :uint32-t)
+  (base-array-layer :uint32-t)
+  (array-layer-count :uint32-t)
+  (aspect :int)
+  (usage :int))
 
+
+#-(ecl)
 (defcstruct wgpu-vertex-state
   (next-in-chain :pointer)
   (module wgpu-shader-module)
@@ -1344,7 +2487,18 @@
   (constants :pointer)
   (buffer-count :size)
   (buffers :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-vertex-state
+  (next-in-chain :pointer-void)
+  (module :pointer-void)
+  (entry-point :wgpu-string-view)
+  (constant-count :cl-index)
+  (constants :pointer-void)
+  (buffer-count :cl-index)
+  (buffers :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-fragment-state
   (next-in-chain :pointer)
   (module wgpu-shader-module)
@@ -1353,7 +2507,18 @@
   (constants :pointer)
   (target-count :size)
   (targets :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-fragment-state
+  (next-in-chain :pointer-void)
+  (module :pointer-void)
+  (entry-point :wgpu-string-view)
+  (constant-count :cl-index)
+  (constants :pointer-void)
+  (target-count :cl-index)
+  (targets :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-render-pipeline-descriptor
   (next-in-chain :pointer)
   (label (:struct wgpu-string-view))
@@ -1363,25 +2528,63 @@
   (depth-stencil :pointer)
   (multisample (:struct wgpu-multisample-state))
   (fragment :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-render-pipeline-descriptor
+  (next-in-chain :pointer-void)
+  (label :wgpu-string-view)
+  (layout :pointer-void)
+  (vertex :wgpu-vertex-state)
+  (primitive :wgpu-primitive-state)
+  (depth-stencil :pointer-void)
+  (multisample :wgpu-multisample-state)
+  (fragment :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-xlib-display-handle
   (display :pointer)
   (screen :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-xlib-display-handle
+  (display :pointer-void)
+  (screen :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-xcb-display-handle
   (connection :pointer)
   (screen :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-xcb-display-handle
+  (connection :pointer-void)
+  (screen :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-wayland-display-handle
   (display :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-wayland-display-handle
+  (display :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-native-display-handle
   (type wgpu-native-display-handle-type)
   (xlib (:struct wgpu-xlib-display-handle))
   (xcb (:struct wgpu-xcb-display-handle))
   (wayland (:struct wgpu-wayland-display-handle))
   (a :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-native-display-handle
+  (type :int)
+  (xlib :wgpu-xlib-display-handle)
+  (xcb :wgpu-xcb-display-handle)
+  (wayland :wgpu-wayland-display-handle)
+  (a :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-instance-extras
   (chain (:struct wgpu-chained-struct))
   (backends wgpu-flags)
@@ -1395,44 +2598,111 @@
   (budget-for-device-creation :pointer)
   (budget-for-device-loss :pointer)
   (display-handle (:struct wgpu-native-display-handle)))
+#+(ecl)
+(ffi:def-struct wgpu-instance-extras
+  (chain :wgpu-chained-struct)
+  (backends :int)
+  (flags :int)
+  (dx12-shader-compiler :int)
+  (gles3-minor-version :int)
+  (gl-fence-behaviour :int)
+  (dxc-path :wgpu-string-view)
+  (dxc-max-shader-model :int)
+  (dx12-presentation-system :int)
+  (budget-for-device-creation :pointer-void)
+  (budget-for-device-loss :pointer-void)
+  (display-handle :wgpu-native-display-handle))
 
+
+#-(ecl)
 (defcstruct wgpu-device-extras
   (chain (:struct wgpu-chained-struct))
   (trace-path (:struct wgpu-string-view)))
+#+(ecl)
+(ffi:def-struct wgpu-device-extras
+  (chain :wgpu-chained-struct)
+  (trace-path :wgpu-string-view))
 
+
+#-(ecl)
 (defcstruct wgpu-native-limits
   (chain (:struct wgpu-chained-struct))
   (max-non-sampler-bindings :uint32)
   (max-binding-array-elements-per-shader-stage :uint32)
   (max-binding-array-sampler-elements-per-shader-stage :uint32)
   (max-multiview-view-count :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-native-limits
+  (chain :wgpu-chained-struct)
+  (max-non-sampler-bindings :uint32-t)
+  (max-binding-array-elements-per-shader-stage :uint32-t)
+  (max-binding-array-sampler-elements-per-shader-stage :uint32-t)
+  (max-multiview-view-count :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-pipeline-layout-extras
   (chain (:struct wgpu-chained-struct))
   (immediate-data-size :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-pipeline-layout-extras
+  (chain :wgpu-chained-struct)
+  (immediate-data-size :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-shader-define
   (name (:struct wgpu-string-view))
   (value (:struct wgpu-string-view)))
+#+(ecl)
+(ffi:def-struct wgpu-shader-define
+  (name :wgpu-string-view)
+  (value :wgpu-string-view))
 
+
+#-(ecl)
 (defcstruct wgpu-shader-source-glsl
   (chain (:struct wgpu-chained-struct))
   (stage wgpu-flags)
   (code (:struct wgpu-string-view))
   (define-count :uint32)
   (defines :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-shader-source-glsl
+  (chain :wgpu-chained-struct)
+  (stage :int)
+  (code :wgpu-string-view)
+  (define-count :uint32-t)
+  (defines :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-shader-module-descriptor-spir-v
   (label (:struct wgpu-string-view))
   (source-size :uint32)
   (source :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-shader-module-descriptor-spir-v
+  (label :wgpu-string-view)
+  (source-size :uint32-t)
+  (source :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-registry-report
   (num-allocated :size)
   (num-kept-from-user :size)
   (num-released-from-user :size)
   (element-size :size))
+#+(ecl)
+(ffi:def-struct wgpu-registry-report
+  (num-allocated :cl-index)
+  (num-kept-from-user :cl-index)
+  (num-released-from-user :cl-index)
+  (element-size :cl-index))
 
+
+#-(ecl)
 (defcstruct wgpu-hub-report
   (adapters (:struct wgpu-registry-report))
   (devices (:struct wgpu-registry-report))
@@ -1451,15 +2721,48 @@
   (textures (:struct wgpu-registry-report))
   (texture-views (:struct wgpu-registry-report))
   (samplers (:struct wgpu-registry-report)))
+#+(ecl)
+(ffi:def-struct wgpu-hub-report
+  (adapters :wgpu-registry-report)
+  (devices :wgpu-registry-report)
+  (queues :wgpu-registry-report)
+  (pipeline-layouts :wgpu-registry-report)
+  (shader-modules :wgpu-registry-report)
+  (bind-group-layouts :wgpu-registry-report)
+  (bind-groups :wgpu-registry-report)
+  (command-buffers :wgpu-registry-report)
+  (render-bundles :wgpu-registry-report)
+  (render-pipelines :wgpu-registry-report)
+  (compute-pipelines :wgpu-registry-report)
+  (pipeline-caches :wgpu-registry-report)
+  (query-sets :wgpu-registry-report)
+  (buffers :wgpu-registry-report)
+  (textures :wgpu-registry-report)
+  (texture-views :wgpu-registry-report)
+  (samplers :wgpu-registry-report))
 
+
+#-(ecl)
 (defcstruct wgpu-global-report
   (surfaces (:struct wgpu-registry-report))
   (hub (:struct wgpu-hub-report)))
+#+(ecl)
+(ffi:def-struct wgpu-global-report
+  (surfaces :wgpu-registry-report)
+  (hub :wgpu-hub-report))
 
+
+#-(ecl)
 (defcstruct wgpu-instance-enumerate-adapter-options
   (next-in-chain :pointer)
   (backends wgpu-flags))
+#+(ecl)
+(ffi:def-struct wgpu-instance-enumerate-adapter-options
+  (next-in-chain :pointer-void)
+  (backends :int))
 
+
+#-(ecl)
 (defcstruct wgpu-bind-group-entry-extras
   (chain (:struct wgpu-chained-struct))
   (buffers :pointer)
@@ -1468,33 +2771,84 @@
   (sampler-count :size)
   (texture-views :pointer)
   (texture-view-count :size))
+#+(ecl)
+(ffi:def-struct wgpu-bind-group-entry-extras
+  (chain :wgpu-chained-struct)
+  (buffers :pointer-void)
+  (buffer-count :cl-index)
+  (samplers :pointer-void)
+  (sampler-count :cl-index)
+  (texture-views :pointer-void)
+  (texture-view-count :cl-index))
 
+
+#-(ecl)
 (defcstruct wgpu-bind-group-layout-entry-extras
   (chain (:struct wgpu-chained-struct))
   (count :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-bind-group-layout-entry-extras
+  (chain :wgpu-chained-struct)
+  (count :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-query-set-descriptor-extras
   (chain (:struct wgpu-chained-struct))
   (pipeline-statistics :pointer)
   (pipeline-statistic-count :size))
+#+(ecl)
+(ffi:def-struct wgpu-query-set-descriptor-extras
+  (chain :wgpu-chained-struct)
+  (pipeline-statistics :pointer-void)
+  (pipeline-statistic-count :cl-index))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-configuration-extras
   (chain (:struct wgpu-chained-struct))
   (desired-maximum-frame-latency :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-surface-configuration-extras
+  (chain :wgpu-chained-struct)
+  (desired-maximum-frame-latency :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-surface-source-swap-chain-panel
   (chain (:struct wgpu-chained-struct))
   (panel-native :pointer))
+#+(ecl)
+(ffi:def-struct wgpu-surface-source-swap-chain-panel
+  (chain :wgpu-chained-struct)
+  (panel-native :pointer-void))
 
+
+#-(ecl)
 (defcstruct wgpu-primitive-state-extras
   (chain (:struct wgpu-chained-struct))
   (polygon-mode wgpu-polygon-mode)
   (conservative wgpu-bool))
+#+(ecl)
+(ffi:def-struct wgpu-primitive-state-extras
+  (chain :wgpu-chained-struct)
+  (polygon-mode :int)
+  (conservative :uint32-t))
 
+
+#-(ecl)
 (defcstruct wgpu-image-subresource-range
   (aspect wgpu-texture-aspect)
   (base-mip-level :uint32)
   (mip-level-count :uint32)
   (base-array-layer :uint32)
   (array-layer-count :uint32))
+#+(ecl)
+(ffi:def-struct wgpu-image-subresource-range
+  (aspect :int)
+  (base-mip-level :uint32-t)
+  (mip-level-count :uint32-t)
+  (base-array-layer :uint32-t)
+  (array-layer-count :uint32-t))
+
 
