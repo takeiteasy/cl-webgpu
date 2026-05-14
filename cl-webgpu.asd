@@ -12,7 +12,8 @@
                 ((:file "package")
                  (:file "library")
                  (:file "types")
-                 (:file "functions")))))
+                 (:file "functions")
+                 (:file "functions-shim")))))
 
 (asdf:defsystem #:cl-webgpu/glfw
   :description "GLFW integration for cl-webgpu"
@@ -26,3 +27,18 @@
                 ((:file "package")
                  (:file "library")
                  (:file "bindings")))))
+
+(asdf:defsystem #:cl-webgpu/codegen
+  :description "Code generator for cl-webgpu CFFI bindings from C headers"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-ppcre #:uiop)
+  :components ((:module "codegen"
+                :components
+                ((:file "package")
+                 (:file "name-transformer")
+                 (:file "c-parser")
+                 (:file "lisp-generator")
+                 (:file "main")))))
