@@ -2,94 +2,182 @@
 
 Common Lisp FFI bindings for [WebGPU](https://www.w3.org/TR/webgpu/) via [wgpu-native](https://github.com/gfx-rs/wgpu-native).
 
-## Overview
+## Requirements
 
-This project provides Common Lisp bindings to the WebGPU C API. Because the C API passes structs (especially `WGPUStringView`) by value in many places, which Common Lisp CFFI handles poorly, this project includes a **small C shim layer** that provides pointer-based alternatives.
-
-## Project Structure
-
-```
-cl-webgpu/
-├── cl-webgpu.asd          # ASDF system definition
-├── shim/                  # C shim layer
-│   ├── webgpu_shim.h      # Shim header
-│   ├── webgpu_shim.c      # Shim implementation
-│   └── Makefile           # Build the shim shared library
-├── src/                   # Lisp FFI bindings
-│   ├── package.lisp       # Package definition
-│   ├── library.lisp       # CFFI foreign library loader
-│   ├── types.lisp         # CFFI type definitions (enums, structs)
-│   └── functions.lisp     # CFFI function bindings
-├── deps/                  # Downloaded dependencies
-│   ├── webgpu/            # webgpu.h + wgpu.h headers
-│   └── wgpu-native/       # wgpu-native source (optional)
-```
-
-## Prerequisites
-
-1. **Common Lisp with CFFI** - SBCL, CCL, etc. with [CFFI](https://common-lisp.net/project/cffi/) installed.
-2. **C compiler** - `cc` or `gcc` or `clang`.
-3. **wgpu-native shared library** - Download a prebuilt release or build from source.
+- **SBCL** (or another CFFI-capable Lisp)
+- **Quicklisp**
+- **Rust / Cargo** — to build wgpu-native from source (or use a pre-built binary)
+- **GLFW 3** — for windowed examples (install via Homebrew, apt, etc.)
+- **C compiler** (`cc` / `clang` / `gcc`)
 
 ## Building
 
-### 1. Download wgpu-native binaries
-
-Download the appropriate prebuilt binaries from the [wgpu-native releases page](https://github.com/gfx-rs/wgpu-native/releases).
-
-Place the shared library (`libwgpu_native.dylib`, `libwgpu_native.so`, or `wgpu_native.dll`) somewhere on your library search path, or note its location.
-
-### 2. Build the C shim
+### 1. Build wgpu-native
 
 ```bash
-cd shim
-make
+cd deps/wgpu-native
+cargo build --release
 ```
 
-This produces `libwebgpu_shim.dylib` (macOS), `libwebgpu_shim.so` (Linux), or `webgpu_shim.dll` (Windows).
+Or download a pre-built binary from the [wgpu-native releases page](https://github.com/gfx-rs/wgpu-native/releases) and place `libwgpu_native.{dylib,so,dll}` in `deps/wgpu-native/target/release/`.
 
-**Note:** On macOS, the shim uses `-undefined dynamic_lookup` so it doesn't need to link against wgpu-native at build time. It will resolve symbols at runtime.
+### 2. Build the C shim + GLFW bridge
+
+```bash
+make        # builds libwebgpu_shim + libglfw3webgpu in shim/
+```
+
+The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), which CFFI handles poorly. On macOS the shim uses `-undefined dynamic_lookup`, so it resolves wgpu-native symbols at runtime.
 
 ### 3. Load in Lisp
 
 ```lisp
 (ql:quickload :cl-webgpu)
 
-;; Load the libraries
 (cl-webgpu:load-wgpu-libraries
-  :wgpu-path "/path/to/wgpu-native/lib/"
-  :shim-path "/path/to/cl-webgpu/shim/")
+  :wgpu-path "deps/wgpu-native/target/release/"
+  :shim-path "shim/")
 ```
 
-## Shim Layer Details
+## Quick Start
 
-The shim layer wraps functions that pass structs by value:
+```lisp
+;; Minimal triangle (raw bindings)
+(load "examples/triangle.lisp")
 
-### WGPUStringView -> (const char*, size_t)
+;; Triangle with wrapper layer + shader DSL
+(load "examples/triangle-wrapper.lisp")
+```
 
-All `SetLabel`, `InsertDebugMarker`, and `PushDebugGroup` functions now take a raw C string pointer + length instead of a `WGPUStringView` struct.
+## Systems
 
-### FreeMembers -> pointer versions
+| System | Purpose |
+|---|---|
+| `cl-webgpu` | Auto-generated FFI bindings (types, enums, functions) |
+| `cl-webgpu/glfw` | GLFW surface creation helper |
+| `cl-webgpu/wrapper` | CLOS wrapper layer — easy-to-use API |
+| `cl-webgpu/shader` | WGSL shader DSL |
+| `cl-webgpu/codegen` | Re-generates `cl-webgpu` bindings from C headers |
 
-`wgpuAdapterInfoFreeMembers`, `wgpuSupportedFeaturesFreeMembers`, etc. now take pointers instead of by-value structs.
+## Wrapper Layer (`cl-webgpu/wrapper`)
 
-### Callbacks -> decomposed signatures
+The wrapper eliminates the `foreign-alloc` / `foreign-slot-value` boilerplate by providing:
 
-All callbacks that received `WGPUStringView` by value now receive `(const char* data, size_t length)` instead. The shim internally translates between the two representations.
+**CLOS handle classes** — each wraps a raw wgpu pointer and dispatches `release` to the correct `wgpu*Release` function:
 
-### Async functions -> decomposed callback info
+```
+gpu-instance  gpu-adapter  gpu-device   gpu-surface
+gpu-shader-module  gpu-render-pipeline  gpu-command-encoder
+gpu-render-pass  gpu-texture-view  gpu-queue  gpu-buffer
+```
 
-Async functions like `wgpuBufferMapAsync` that took callback info structs by value now take the callback fields individually.
+**`with-X` macros** — RAII-style resource scoping:
 
-## API Coverage
+```lisp
+(with-gpu-instance (inst)
+  (with-gpu-adapter (adapter inst)
+    (with-gpu-device (device inst adapter)
+      ...)))   ; all handles released on exit, even on error
+```
 
-The bindings cover:
-- All core WebGPU object types (Device, Buffer, Texture, Pipeline, etc.)
-- All enums and bitflags
-- All struct definitions needed for descriptor creation
-- All synchronous functions
-- All async functions (via shim callbacks)
-- wgpu-native extensions (extras, logging, enumeration, etc.)
+**`with-wgpu-struct`** — scoped zeroed foreign struct (no manual `foreign-alloc`/`foreign-free`):
+
+```lisp
+(with-wgpu-struct (desc '(:struct wgpu-render-pipeline-descriptor))
+  (setf (foreign-slot-value desc ...) ...)
+  ...)
+```
+
+**Creation helpers** hide descriptor boilerplate entirely:
+
+```lisp
+(make-gpu-instance)
+(request-gpu-adapter instance &key power-preference backend)
+(request-gpu-device  instance adapter &key label)
+(make-shader-module  device wgsl-source &key label)
+(get-surface-format  surface adapter)               ; → keyword e.g. :bgra8-unorm
+(make-render-pipeline device &key vertex-module fragment-module
+                              entry-point surface-format label)
+(configure-surface   surface device format width height)
+(make-command-encoder device &key label)
+(begin-render-pass   encoder texture-view &key clear-r clear-g clear-b clear-a)
+(end-and-submit      encoder pass queue surface)
+```
+
+See `examples/triangle-wrapper.lisp` for a complete example.
+
+## Shader DSL (`cl-webgpu/shader`)
+
+Write WGSL shaders in Common Lisp. The DSL compiles Lisp forms, infers types, and emits WGSL.
+
+### Defining shaders
+
+```lisp
+(ql:quickload :cl-webgpu/shader)
+
+;; Define a fragment colour output
+(cl-webgpu/shader/internal:shader-output frag-color :vec4
+  :stage :fragment :location 0)
+
+;; Define fragment entry point
+(cl-webgpu/shader/internal:shader-defun main ()
+  (setf frag-color (vec4 1.0 0.5 0.0 1.0)))
+
+;; Generate combined vertex+fragment WGSL string
+(cl-webgpu/shader:generate-shader :vertex 'vs-main :fragment 'main)
+```
+
+### Key macros (in `cl-webgpu/shader/internal`)
+
+| Macro | Purpose |
+|---|---|
+| `shader-defun name args &body` | Define a shader function |
+| `shader-output name type &key stage location` | Declare a stage output |
+| `shader-input name type &key stage location` | Declare a stage input |
+| `shader-uniform name type &key stage group binding` | Declare a uniform |
+| `shader-interface name (&key in out uniform) &body` | Declare an interface block |
+
+### Built-in shader variables
+
+Vertex: `vertex-index`, `instance-index`  
+Fragment: `frag-position`, `front-facing`, `frag-depth`, `sample-index`  
+Compute: `global-invocation-id`, `local-invocation-id`, `workgroup-id`, `num-workgroups`
+
+### Entry point generation
+
+`generate-shader` uses an "old-style" struct I/O convention. The vertex entry point
+receives an auto-built `VertexInput` struct (from `:vertex` stage inputs) and returns
+`VertexOutput` (always includes `@builtin(position)`). Vertex outputs flow through to
+the fragment stage as `FragmentInput`.
+
+```lisp
+(defparameter *shader-src*
+  (cl-webgpu/shader:generate-shader :vertex 'vs-main :fragment 'fs-main))
+
+;; Then feed to the wrapper:
+(make-shader-module device *shader-src* :label "My Shader")
+```
+
+### Compile/inspect separately
+
+```lisp
+;; Compile a single form into the shader IR
+(cl-webgpu/shader:compile-form
+  '(cl:defun vs-main () (setf position (vec4 0.0 0.0 0.0 1.0))))
+
+;; Generate WGSL for one stage (also returns uniforms, attributes)
+(cl-webgpu/shader:generate-stage :vertex 'vs-main)
+```
+
+## Regenerating Bindings
+
+The files under `src/` (except `library.lisp`) are auto-generated from the C headers
+in `deps/webgpu/`. After updating headers:
+
+```lisp
+(ql:quickload :cl-webgpu/codegen)
+(cl-webgpu/codegen:generate)
+```
 
 ## License
 

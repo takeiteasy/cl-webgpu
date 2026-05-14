@@ -17,6 +17,18 @@
                  (:file "functions")
                  (:file "functions-shim")))))
 
+(asdf:defsystem #:cl-webgpu/wrapper
+  :description "CLOS wrapper layer for cl-webgpu"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-webgpu)
+  :components ((:module "wrapper"
+                :components
+                ((:file "package")
+                 (:file "wrapper")))))
+
 (asdf:defsystem #:cl-webgpu/glfw
   :description "GLFW integration for cl-webgpu"
   :author "George Watson <gigolo@hotmail.co.uk>"
