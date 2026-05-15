@@ -181,4 +181,4 @@ in `deps/webgpu/`. After updating headers:
 
 ## License
 
-MIT License
+[MIT](LICENSE)
