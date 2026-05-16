@@ -108,6 +108,8 @@ See `examples/triangle-wrapper.lisp` for a complete example.
 
 ## Shader DSL (`cl-webgpu/shader`)
 
+> This is a fork of [3bgl-shaders](https://github.com/3b/3bgl-shaders) for WGSL shaders.
+
 Write WGSL shaders in Common Lisp. The DSL compiles Lisp forms, infers types, and emits WGSL.
 
 ### Defining shaders
@@ -180,5 +182,14 @@ in `deps/webgpu/`. After updating headers:
 ```
 
 ## License
+
+### Dependencies + vendored
+
+- [3bgl-shaders](https://github.com/3b/3bgl-shaders) forked + modified (MIT)
+- [wgpu-native](https://github.com/gfx-rs/wgpu-native) [MIT](https://github.com/gfx-rs/wgpu-native/blob/master/LICENSE.MIT)/[Apache 2.0](https://github.com/gfx-rs/wgpu-native/blob/master/LICENSE.APACHE)
+- [webgpu-headers](https://github.com/webgpu-native/webgpu-headers) [BSD-3-Clause](https://github.com/webgpu-native/webgpu-headers/blob/master/LICENSE)
+- [glfw3webgpu](https://github.com/eliemichel/glfw3webgpu) [MIT](https://github.com/eliemichel/glfw3webgpu/blob/master/LICENSE.txt)
+- [glfw3](https://github.com/glfw/glfw) [ZLIB](https://github.com/glfw/glfw/blob/master/LICENSE)
+- Dependencies: [cl-glfw3](https://github.com/AlexCharlton/cl-glfw3) (for `cl-webgpu/glfw`), cffi, bordeaux-threads, alexandria, cl-ppcre, uiop
 
 [MIT](LICENSE)

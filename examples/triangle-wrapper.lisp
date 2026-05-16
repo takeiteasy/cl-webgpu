@@ -47,7 +47,14 @@
 
 (defpackage #:triangle-wrapper-example
   (:use #:cl #:cl-webgpu/wrapper)
-  (:import-from #:cl-webgpu #:load-wgpu-libraries))
+  (:import-from #:cl-webgpu #:load-wgpu-libraries)
+  (:import-from #:cl-webgpu/glfw
+                #:initialize
+                #:terminate
+                #:create-window
+                #:destroy-window
+                #:poll-events
+                #:window-should-close-p))
 
 (in-package #:triangle-wrapper-example)
 

@@ -97,10 +97,10 @@ fn main() -> @location(0) vec4<f32> {
   #+sbcl (sb-int:set-floating-point-modes :traps nil)
 
   ;; --- Initialize GLFW ---
-  (cl-glfw3:initialize)
+  (cl-webgpu/glfw:initialize)
 
   ;; --- Create window (hints passed as keyword args) ---
-  (let* ((window (cl-glfw3:create-window :width 640 :height 480
+  (let* (          (window (cl-webgpu/glfw:create-window :width 640 :height 480
                                          :title "WebGPU Triangle"
                                          :client-api :no-api
                                          :resizable nil))
@@ -293,9 +293,9 @@ fn main() -> @location(0) vec4<f32> {
 
                     ;; --- Render loop ---
                     (format t "Starting render loop (close window to exit)...~%")
-                    (loop while (not (cl-glfw3:window-should-close-p window))
+                    (loop while (not (cl-webgpu/glfw:window-should-close-p window))
                           do (progn
-                               (cl-glfw3:poll-events)
+                               (cl-webgpu/glfw:poll-events)
 
                                 ;; Get current texture
                                 (with-foreign-object (surface-texture '(:struct wgpu-surface-texture))
@@ -406,8 +406,8 @@ fn main() -> @location(0) vec4<f32> {
           (wgpu-instance-release instance))
 
       ;; Always cleanup GLFW
-      (cl-glfw3:destroy-window window)
-      (cl-glfw3:terminate)
+      (cl-webgpu/glfw:destroy-window window)
+      (cl-webgpu/glfw:terminate)
       (format t "Done.~%"))))))))
 
 ;; Run the example
