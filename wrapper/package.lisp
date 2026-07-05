@@ -39,8 +39,32 @@
    #:wgpu-texture-create-view #:wgpu-texture-view-release
    #:wgpu-buffer-destroy #:wgpu-buffer-release
    #:%get-silent-uncaptured-error-callback
+   ;; enums used as CFFI types in wrapper
+   #:wgpu-texture-format
    ;; constants
-   #:+wgpu-texture-usage-render-attachment+)
+   #:+wgpu-texture-usage-render-attachment+
+   ;; struct slot names (internal — not exported by cl-webgpu but needed here)
+   #:next-in-chain #:next #:s-type
+   #:data #:length
+   #:label #:code #:chain
+   #:power-preference #:feature-level #:force-fallback-adapter
+   #:backend-type #:compatible-surface
+   #:required-feature-count #:required-features #:required-limits
+   #:default-queue #:device-lost-callback-info #:uncaptured-error-callback-info
+   #:callback #:userdata #:userdata1 #:userdata2 #:mode #:device
+   #:module #:entry-point #:constant-count #:constants
+   #:buffer-count #:buffers #:vertex #:primitive #:multisample #:depth-stencil
+   #:fragment #:target-count #:targets
+   #:topology #:strip-index-format #:front-face #:cull-mode #:unclipped-depth
+   #:count #:mask #:alpha-to-coverage-enabled
+   #:format #:blend #:write-mask
+   #:usage #:width #:height #:present-mode #:alpha-mode
+   #:view-format-count #:view-formats #:layout
+   #:load-op #:store-op #:clear-value #:r #:g #:b #:a
+   #:resolve-target #:depth-slice #:view
+   #:color-attachment-count #:color-attachments
+   #:occlusion-query-set #:depth-stencil-attachment #:timestamp-writes
+   #:format-count #:formats)
   (:export
    ;; base class + generics
    #:gpu-handle #:handle #:release #:null-handle-p
