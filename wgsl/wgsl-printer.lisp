@@ -133,10 +133,15 @@ When false (default), omit it so the shader defines its own group 0 layout.")
 (defvar *wgsl-rename-table* nil)
 
 (defun collect-wgsl-bindings (objects stage)
-  "Collect input/output/uniform bindings for WGSL struct generation."
+  "Collect input/output/uniform/buffer bindings for WGSL struct generation.
+Returns four values: inputs, outputs, uniforms, buffers.
+The :buffer qualifier (var<storage>) uses the same (if (consp iq) (car iq) iq)
+idiom as the rest of the dispatcher, leaving room for a future (:buffer :read)
+cons to select a read-only access mode (currently always read_write)."
   (let ((inputs nil)
         (outputs nil)
-        (uniforms nil))
+        (uniforms nil)
+        (buffers nil))
     (loop for obj in objects
           when (typep obj 'interface-binding)
             do (let* ((sb (stage-binding obj))
@@ -145,10 +150,12 @@ When false (default), omit it so the shader defines its own group 0 layout.")
                  (case iq-key
                    (:in (push obj inputs))
                    (:out (push obj outputs))
-                   (:uniform (push obj uniforms)))))
+                   (:uniform (push obj uniforms))
+                   (:buffer (push obj buffers)))))
     (values (nreverse inputs)
             (nreverse outputs)
-            (nreverse uniforms))))
+            (nreverse uniforms)
+            (nreverse buffers))))
 
 ;;; Ugly standard preamble — the fixed group(0) uniform layout
 ;;; Custom shaders MUST declare this because ugly always binds its
@@ -374,6 +381,50 @@ var s_diffuse: sampler;
       (when (> binding-idx 1)
         (format stream "~%")))))
 
+(defun print-wgsl-user-buffers (buffers stream)
+  "Emit struct definitions and @group(N) @binding(N) var<storage, read_write>
+lines for storage buffer blocks.
+
+The struct definition is emitted here because the general struct-emission loop
+in generate-wgsl only handles struct-type objects, not interface-type blocks.
+Access mode is always read_write — a future (:buffer :read) qualifier (see the
+(:buffer …) cons idiom in collect-wgsl-bindings) will enable var<storage, read>.
+Only buffers with explicit :group/:binding layout qualifiers are emitted.
+
+Two binding patterns are supported:
+  Named — (interface my-block (:buffer inst-name :layout (:group N :binding N)) ...)
+    inst-name is visible as an aggregate in shader code.
+    interface-block is nil; value-type returns the interface-type.
+  T-binding — (interface my-block (:buffer t :layout (:group N :binding N)) ...)
+    Slots are directly visible as variables; interface-block holds the block type."
+  (let ((seen-blocks (make-hash-table)))
+    (loop for b in buffers
+          for sb = (stage-binding b)
+          for lq = (layout-qualifier sb)
+          for group = (getf lq :group)
+          for binding-idx = (getf lq :binding)
+          ;; For T-binding, interface-block is the block type (slots bound individually).
+          ;; For named binding, interface-block is nil but value-type = the interface-type.
+          for block-type = (or (interface-block sb) (value-type sb))
+          when (and group binding-idx block-type (name block-type))
+            do (let ((block-name (name block-type)))
+                 (unless (gethash block-name seen-blocks)
+                   (setf (gethash block-name seen-blocks) t)
+                   ;; Emit the struct definition (not emitted by the general struct loop)
+                   (print-wgsl-struct block-type stream)
+                   ;; Emit the var<storage, read_write> binding.
+                   ;; For T-bindings, use the block type name as the instance name
+                   ;; (fields accessed as block_name.field in generated code).
+                   ;; For named bindings, use translate-name on b (the instance name).
+                   (let ((inst-name (if (interface-block sb)
+                                        (translate-name block-type)
+                                        (translate-name b))))
+                     (format stream
+                             "@group(~d) @binding(~d) var<storage, read_write> ~a: ~a;~%~%"
+                             group binding-idx
+                             inst-name
+                             (wgsl-translate-type block-type))))))))
+
 ;;; WGSL builtin name mapping for @builtin annotations
 
 (defparameter *wgsl-builtin-names*
@@ -440,7 +491,7 @@ var s_diffuse: sampler;
   (let* ((*wgsl-name-mode* t)
          (stage *current-shader-stage*)
          (explicit-struct-io (main-function-has-struct-io-p objects)))
-    (multiple-value-bind (inputs outputs uniforms)
+    (multiple-value-bind (inputs outputs uniforms buffers)
         (collect-wgsl-bindings objects stage)
       (let ((*wgsl-context* (make-instance 'wgsl-shader-context
                                            :stage stage)))
@@ -468,6 +519,10 @@ var s_diffuse: sampler;
                       uniforms)))
             (when visible-uniforms
               (print-wgsl-user-uniforms visible-uniforms *standard-output*)))
+
+          ;; Storage buffers (var<storage, read_write>)
+          (when buffers
+            (print-wgsl-user-buffers buffers *standard-output*))
 
           ;; Auto-generated input/output structs — only when no explicit struct I/O
           (unless explicit-struct-io
@@ -1457,8 +1512,9 @@ STAGES-DATA is a list of (stage objects inferred-types main-binding) quads."
    (with-output-to-string (*standard-output*)
     ;; Collect all structs and uniforms first (needed to detect texture type override)
     (let ((seen-structs (make-hash-table))
-          (all-uniforms nil))
-      ;; First pass: collect all structs and uniforms
+          (all-uniforms nil)
+          (all-buffers nil))
+      ;; First pass: collect all structs, uniforms, and storage buffers
       (loop for (stage objects inferred-types main-binding) in stages-data
             do (let ((*current-shader-stage* stage))
                  (loop for obj in objects
@@ -1466,12 +1522,15 @@ STAGES-DATA is a list of (stage objects inferred-types main-binding) quads."
                                  (not (gethash (name obj) seen-structs))
                                  (not (and *emit-ugly-preamble* (internal obj))))
                          do (setf (gethash (name obj) seen-structs) t))
-                 (multiple-value-bind (inputs outputs uniforms)
+                 (multiple-value-bind (inputs outputs uniforms buffers)
                      (collect-wgsl-bindings objects stage)
                    (declare (ignore inputs outputs))
                    (loop for u in uniforms
                          unless (member (name u) all-uniforms :key #'name)
-                           do (push u all-uniforms)))))
+                           do (push u all-uniforms))
+                   (loop for b in buffers
+                         unless (member (name b) all-buffers :key #'name)
+                           do (push b all-buffers)))))
 
       ;; Detect texture type override at group 0 binding 1 (for array/cube shaders)
       (let ((preamble-texture-type "texture_2d<f32>"))
@@ -1519,7 +1578,12 @@ STAGES-DATA is a list of (stage objects inferred-types main-binding) quads."
                                        (nreverse all-uniforms))
                             (nreverse all-uniforms))))
           (when uniforms
-            (print-wgsl-user-uniforms uniforms *standard-output*)))))
+            (print-wgsl-user-uniforms uniforms *standard-output*)))
+
+        ;; Emit storage buffers (var<storage, read_write>) once, deduplicated
+        (let ((buffers (nreverse all-buffers)))
+          (when buffers
+            (print-wgsl-user-buffers buffers *standard-output*)))))
 
     ;; Collect helper functions (deduplicated) and entry points
     (let ((seen-helpers (make-hash-table)))
@@ -1527,8 +1591,9 @@ STAGES-DATA is a list of (stage objects inferred-types main-binding) quads."
       (loop for (stage objects inferred-types main-binding) in stages-data
             do (let ((*current-shader-stage* stage)
                      (*print-as-main* main-binding))
-                 (multiple-value-bind (inputs outputs uniforms)
+                 (multiple-value-bind (inputs outputs uniforms buffers)
                      (collect-wgsl-bindings objects stage)
+                   (declare (ignore buffers))
                    (let ((*wgsl-context* (make-instance 'wgsl-shader-context
                                                         :stage stage)))
                      (setf (wgsl-inputs *wgsl-context*) inputs
@@ -1553,8 +1618,9 @@ STAGES-DATA is a list of (stage objects inferred-types main-binding) quads."
                       (*print-as-main* main-binding))
                  (when main-binding
                    ;; Rebuild context for this stage
-                   (multiple-value-bind (inputs outputs uniforms)
+                   (multiple-value-bind (inputs outputs uniforms buffers)
                        (collect-wgsl-bindings objects stage)
+                     (declare (ignore buffers))
                      (let ((*wgsl-context* (make-instance 'wgsl-shader-context
                                                           :stage stage)))
                        (setf (wgsl-inputs *wgsl-context*) inputs

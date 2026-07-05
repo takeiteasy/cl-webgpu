@@ -151,6 +151,11 @@
 (defmethod translate-type ((type struct-type))
   (or (target-name type) (%translate-name (name type))))
 
+;;; Interface types (e.g. storage buffers declared with the :buffer qualifier)
+;;; share the same name-translation logic as struct types.
+(defmethod translate-type ((type interface-type))
+  (or (target-name type) (%translate-name (name type))))
+
 ;;; Statement assertion macro
 
 (defmacro assert-statement ()
