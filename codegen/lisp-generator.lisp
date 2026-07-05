@@ -542,8 +542,15 @@ Each entry: (c-name lisp-name return-type (param-sym cffi-type) ...).")
     ;; Opaque handles, enum types, struct types, flag types → their type symbol names
     (dolist (d decls)
       (case (getf d :kind)
-        ((:opaque :enum :struct :flag-type)
+        ((:opaque :enum :flag-type)
          (push (c-type-name-to-symbol (getf d :name)) syms))
+        (:struct
+         ;; Export the struct type name and all its field names so that downstream
+         ;; packages can reference slots without the internal cl-webgpu:: double-colon
+         ;; syntax.  Resolves ticket #18.
+         (push (c-type-name-to-symbol (getf d :name)) syms)
+         (dolist (field (getf d :fields))
+           (push (c-field-name-to-symbol (getf field :name)) syms)))
         (:flag-value
          (push (c-flag-name-to-constant-string (getf d :name)) syms))
         (:function

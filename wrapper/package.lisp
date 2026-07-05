@@ -43,7 +43,7 @@
    #:wgpu-texture-format
    ;; constants
    #:+wgpu-texture-usage-render-attachment+
-   ;; struct slot names (internal — not exported by cl-webgpu but needed here)
+   ;; struct slot names — now exported from cl-webgpu (ticket #18 resolved)
    #:next-in-chain #:next #:s-type
    #:data #:length
    #:label #:code #:chain
