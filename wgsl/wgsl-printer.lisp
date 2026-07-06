@@ -135,9 +135,9 @@ When false (default), omit it so the shader defines its own group 0 layout.")
 (defun collect-wgsl-bindings (objects stage)
   "Collect input/output/uniform/buffer bindings for WGSL struct generation.
 Returns four values: inputs, outputs, uniforms, buffers.
-The :buffer qualifier (var<storage>) uses the same (if (consp iq) (car iq) iq)
-idiom as the rest of the dispatcher, leaving room for a future (:buffer :read)
-cons to select a read-only access mode (currently always read_write)."
+The :buffer qualifier (var<storage, ACCESS>) is stored as the bare keyword :buffer;
+access mode is controlled separately via :access in the :layout plist and is
+resolved by print-wgsl-user-buffers."
   (let ((inputs nil)
         (outputs nil)
         (uniforms nil)
@@ -381,15 +381,35 @@ var s_diffuse: sampler;
       (when (> binding-idx 1)
         (format stream "~%")))))
 
+(defun %buffer-access-mode-string (access)
+  "Resolve an :access layout keyword to the WGSL storage access-mode string.
+Valid values (from the :layout plist's :access key):
+  nil / :read-write → \"read_write\"  (default; preserves existing behaviour)
+  t                 → \"read_write\"  (alias matching the :buffer t idiom)
+  :read             → \"read\"
+  :write            → signals an error — var<storage, write> is invalid WGSL.
+  anything else     → signals an error naming the bad value."
+  (case access
+    ((nil :read-write t) "read_write")
+    (:read  "read")
+    (:write (error "~@<DSL error: :access :write is not a valid WGSL storage ~
+access mode.  WGSL storage buffers support only :read and :read-write.~:@>"))
+    (t      (error "~@<DSL error: unknown storage access mode ~s.  ~
+Valid values are :read and :read-write (default).~:@>" access))))
+
 (defun print-wgsl-user-buffers (buffers stream)
-  "Emit struct definitions and @group(N) @binding(N) var<storage, read_write>
+  "Emit struct definitions and @group(N) @binding(N) var<storage, ACCESS>
 lines for storage buffer blocks.
 
 The struct definition is emitted here because the general struct-emission loop
 in generate-wgsl only handles struct-type objects, not interface-type blocks.
-Access mode is always read_write — a future (:buffer :read) qualifier (see the
-(:buffer …) cons idiom in collect-wgsl-bindings) will enable var<storage, read>.
 Only buffers with explicit :group/:binding layout qualifiers are emitted.
+
+Access mode is controlled by the :access key in the :layout plist:
+  (:buffer t :layout (:group N :binding N))            → var<storage, read_write>  (default)
+  (:buffer t :layout (:group N :binding N :access :read))      → var<storage, read>
+  (:buffer t :layout (:group N :binding N :access :read-write)) → var<storage, read_write>
+  :access :write is rejected at DSL compile time — it is not valid WGSL.
 
 Two binding patterns are supported:
   Named — (interface my-block (:buffer inst-name :layout (:group N :binding N)) ...)
@@ -403,6 +423,7 @@ Two binding patterns are supported:
           for lq = (layout-qualifier sb)
           for group = (getf lq :group)
           for binding-idx = (getf lq :binding)
+          for access-mode = (%buffer-access-mode-string (getf lq :access))
           ;; For T-binding, interface-block is the block type (slots bound individually).
           ;; For named binding, interface-block is nil but value-type = the interface-type.
           for block-type = (or (interface-block sb) (value-type sb))
@@ -412,7 +433,7 @@ Two binding patterns are supported:
                    (setf (gethash block-name seen-blocks) t)
                    ;; Emit the struct definition (not emitted by the general struct loop)
                    (print-wgsl-struct block-type stream)
-                   ;; Emit the var<storage, read_write> binding.
+                   ;; Emit the var<storage, ACCESS> binding.
                    ;; For T-bindings, use the block type name as the instance name
                    ;; (fields accessed as block_name.field in generated code).
                    ;; For named bindings, use translate-name on b (the instance name).
@@ -420,8 +441,9 @@ Two binding patterns are supported:
                                         (translate-name block-type)
                                         (translate-name b))))
                      (format stream
-                             "@group(~d) @binding(~d) var<storage, read_write> ~a: ~a;~%~%"
+                             "@group(~d) @binding(~d) var<storage, ~a> ~a: ~a;~%~%"
                              group binding-idx
+                             access-mode
                              inst-name
                              (wgsl-translate-type block-type))))))))
 
