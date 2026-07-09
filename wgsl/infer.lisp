@@ -787,6 +787,35 @@
   (let ((struct-type (walk (binding form) walker)))
     (when (typep struct-type 'constrained-type)
       (setf struct-type (get-only-hash-key (types struct-type))))
+    ;; When the binding resolves to a vector concrete-type (e.g. from a prior
+    ;; struct-field access like (@ in pos) returning :vec2), and the field is a
+    ;; single swizzle component (x/y/z/w, r/g/b/a, s/t/p/q), promote the node
+    ;; to swizzle-access so all downstream passes (finalize, codegen, tree-shaker)
+    ;; handle it correctly.  Calling (bindings concrete-type) has no applicable
+    ;; method and would signal an error (#26).
+    (let* ((vec-type (cond ((typep struct-type 'concrete-type) struct-type)
+                           ((and (typep struct-type 'array-type)
+                                 (typep (base-type struct-type) 'concrete-type))
+                            (base-type struct-type))))
+           (fname   (and vec-type (string (field form))))
+           (swizzle-char
+             (and fname
+                  (= 1 (length fname))
+                  (let ((c (char-upcase (char fname 0))))
+                    (and (or (position c "XYZW")
+                             (position c "RGBA")
+                             (position c "STPQ"))
+                         c)))))
+      (when swizzle-char
+        (let ((min-size (or (position swizzle-char "XYZW")
+                            (position swizzle-char "RGBA")
+                            (position swizzle-char "STPQ"))))
+          (change-class form 'swizzle-access
+                        :field    (string-downcase (string swizzle-char))
+                        :min-size min-size)
+          (return-from walk
+            (setf (value-type form)
+                  (aref (scalar/vector-set vec-type) 1))))))
     ;; fixme: should structs have a hash for O(1) access?
     ;; or should something earlier have already looked up the specific slot?
     (loop for binding in (bindings struct-type)

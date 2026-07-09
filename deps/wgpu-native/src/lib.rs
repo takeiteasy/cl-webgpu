@@ -1321,14 +1321,12 @@ pub unsafe extern "C" fn wgpuCommandEncoderClearTexture(
             aspect: conv::map_texture_aspect(range.aspect).unwrap_or(wgt::TextureAspect::All),
             base_mip_level: range.baseMipLevel,
             mip_level_count: match range.mipLevelCount {
-                0 => panic!("invalid mipLevelCount"),
-                native::WGPU_MIP_LEVEL_COUNT_UNDEFINED => None,
+                0 | native::WGPU_MIP_LEVEL_COUNT_UNDEFINED => None,
                 _ => Some(range.mipLevelCount),
             },
             base_array_layer: range.baseArrayLayer,
             array_layer_count: match range.arrayLayerCount {
-                0 => panic!("invalid arrayLayerCount"),
-                native::WGPU_ARRAY_LAYER_COUNT_UNDEFINED => None,
+                0 | native::WGPU_ARRAY_LAYER_COUNT_UNDEFINED => None,
                 _ => Some(range.arrayLayerCount),
             },
         },
@@ -4290,14 +4288,12 @@ pub unsafe extern "C" fn wgpuTextureCreateView(
                     .unwrap_or(wgt::TextureAspect::All),
                 base_mip_level: descriptor.baseMipLevel,
                 mip_level_count: match descriptor.mipLevelCount {
-                    0 => panic!("invalid mipLevelCount"),
-                    native::WGPU_MIP_LEVEL_COUNT_UNDEFINED => None,
+                    0 | native::WGPU_MIP_LEVEL_COUNT_UNDEFINED => None,
                     _ => Some(descriptor.mipLevelCount),
                 },
                 base_array_layer: descriptor.baseArrayLayer,
                 array_layer_count: match descriptor.arrayLayerCount {
-                    0 => panic!("invalid arrayLayerCount"),
-                    native::WGPU_ARRAY_LAYER_COUNT_UNDEFINED => None,
+                    0 | native::WGPU_ARRAY_LAYER_COUNT_UNDEFINED => None,
                     _ => Some(descriptor.arrayLayerCount),
                 },
             },

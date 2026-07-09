@@ -151,7 +151,8 @@ packages = [
       ['ffi/wgpu.h!', 'deps/webgpu'],
     ],
     patches: [
-      'patches/wgpu-native-wgpu.h.patch'
+      'patches/wgpu-native-wgpu.h.patch',
+      'patches/wgpu-native-texview-default.patch'
     ]
   },
   {

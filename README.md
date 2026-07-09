@@ -14,6 +14,10 @@ Common Lisp FFI bindings for [WebGPU](https://www.w3.org/TR/webgpu/) via [wgpu-n
 
 ### 1. Build wgpu-native
 
+The vendored wgpu-native source in `deps/wgpu-native/` includes local patches from
+`patches/` (registered in `dependencies.rb`). These are already applied to the vendored
+source tree; you do not need to apply them manually.
+
 ```bash
 cd deps/wgpu-native
 cargo build --release
