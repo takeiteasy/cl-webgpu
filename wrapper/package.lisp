@@ -39,8 +39,10 @@
    #:wgpu-texture-create-view #:wgpu-texture-view-release
    #:wgpu-buffer-destroy #:wgpu-buffer-release
    #:%get-silent-uncaptured-error-callback
+   ;; struct types for vertex buffer layout support
+   #:wgpu-vertex-buffer-layout #:wgpu-vertex-attribute
    ;; enums used as CFFI types in wrapper
-   #:wgpu-texture-format
+   #:wgpu-texture-format #:wgpu-vertex-format #:wgpu-vertex-step-mode
    ;; constants
    #:+wgpu-texture-usage-render-attachment+
    ;; struct slot names — now exported from cl-webgpu (ticket #18 resolved)
@@ -64,7 +66,9 @@
    #:resolve-target #:depth-slice #:view
    #:color-attachment-count #:color-attachments
    #:occlusion-query-set #:depth-stencil-attachment #:timestamp-writes
-   #:format-count #:formats)
+   #:format-count #:formats
+   ;; vertex buffer layout slot names
+   #:step-mode #:array-stride #:attribute-count #:attributes #:shader-location #:offset)
   (:export
    ;; base class + generics
    #:gpu-handle #:handle #:release #:null-handle-p

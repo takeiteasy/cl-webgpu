@@ -220,18 +220,70 @@
       (wgpu-shim-surface-capabilities-free-members caps)
       fmt)))
 
+(defun %build-vertex-buffer-layouts (layouts)
+  "Allocate WGPUVertexBufferLayout[] and associated WGPUVertexAttribute[] arrays from
+LAYOUTS, a list of plists each with keys:
+  :array-stride  — byte stride (required)
+  :step-mode     — :vertex (default) or :instance
+  :attributes    — list of plists with :format, :offset, :shader-location
+
+Returns (values layouts-ptr attr-ptrs n-layouts).
+All returned pointers must be freed by the caller after pipeline creation."
+  (let* ((n       (length layouts))
+         (lptr    (foreign-alloc '(:struct wgpu-vertex-buffer-layout) :count n))
+         (aptrs   '()))
+    (loop for vbl in layouts
+          for i from 0 do
+          (let* ((attrs  (getf vbl :attributes))
+                 (na     (length attrs))
+                 (aptr   (if (plusp na)
+                             (foreign-alloc '(:struct wgpu-vertex-attribute) :count na)
+                             (null-pointer)))
+                 (lp     (mem-aptr lptr '(:struct wgpu-vertex-buffer-layout) i)))
+            (when (plusp na)
+              (push aptr aptrs))
+            ;; populate attributes
+            (loop for attr in attrs
+                  for j from 0 do
+                  (let ((ap (mem-aptr aptr '(:struct wgpu-vertex-attribute) j)))
+                    (setf (foreign-slot-value ap '(:struct wgpu-vertex-attribute) 'next-in-chain) (null-pointer)
+                          (foreign-slot-value ap '(:struct wgpu-vertex-attribute) 'format)         (getf attr :format)
+                          (foreign-slot-value ap '(:struct wgpu-vertex-attribute) 'offset)         (getf attr :offset 0)
+                          (foreign-slot-value ap '(:struct wgpu-vertex-attribute) 'shader-location) (getf attr :shader-location 0))))
+            ;; populate layout
+            (setf (foreign-slot-value lp '(:struct wgpu-vertex-buffer-layout) 'next-in-chain)  (null-pointer)
+                  (foreign-slot-value lp '(:struct wgpu-vertex-buffer-layout) 'step-mode)      (or (getf vbl :step-mode) :vertex)
+                  (foreign-slot-value lp '(:struct wgpu-vertex-buffer-layout) 'array-stride)   (getf vbl :array-stride)
+                  (foreign-slot-value lp '(:struct wgpu-vertex-buffer-layout) 'attribute-count) na
+                  (foreign-slot-value lp '(:struct wgpu-vertex-buffer-layout) 'attributes)     aptr)))
+    (values lptr (nreverse aptrs) n)))
+
 (defun make-render-pipeline (device &key vertex-module fragment-module
                                          (entry-point "main")
                                          vertex-entry-point
                                          fragment-entry-point
                                          surface-format
+                                         vertex-buffer-layouts
                                          label)
-  "Build a simple render pipeline (no depth, no vertex buffers). Returns GPU-RENDER-PIPELINE.
+  "Build a render pipeline (no depth). Returns GPU-RENDER-PIPELINE.
 
 ENTRY-POINT (default \"main\") is the shared fallback for both shader stages.
 VERTEX-ENTRY-POINT and FRAGMENT-ENTRY-POINT override the entry-point name for
 each stage independently — use these when vertex and fragment stages have distinct
-names (e.g. \"vs_main\" / \"fs_main\" as produced by the cl-webgpu/shader DSL)."
+names (e.g. \"vs_main\" / \"fs_main\" as produced by the cl-webgpu/shader DSL).
+
+VERTEX-BUFFER-LAYOUTS is an optional list of vertex buffer descriptors, each a
+plist with:
+  :array-stride  — byte stride across one vertex (required)
+  :step-mode     — :vertex (default) or :instance
+  :attributes    — list of attribute plists with :format, :offset, :shader-location
+
+Example with two separate attribute buffers (position slot 0, colour slot 1):
+  :vertex-buffer-layouts
+  '((:array-stride 12 :step-mode :vertex
+     :attributes ((:format :float32x3 :offset 0 :shader-location 0)))
+    (:array-stride 16 :step-mode :vertex
+     :attributes ((:format :float32x4 :offset 0 :shader-location 1))))"
   (let* ((vep      (or vertex-entry-point entry-point))
          (fep      (or fragment-entry-point entry-point))
          (desc         (foreign-alloc '(:struct wgpu-render-pipeline-descriptor)))
@@ -241,25 +293,35 @@ names (e.g. \"vs_main\" / \"fs_main\" as produced by the cl-webgpu/shader DSL)."
          (vep-len      (length vep))
          (fep-data     (foreign-string-alloc fep))
          (fep-len      (length fep)))
-    (unwind-protect
-        (progn
-          (setf (foreign-slot-value desc '(:struct wgpu-render-pipeline-descriptor) 'next-in-chain)
-                (null-pointer))
-          (%set-string-view (foreign-slot-pointer desc '(:struct wgpu-render-pipeline-descriptor) 'label) label)
-          (setf (foreign-slot-value desc '(:struct wgpu-render-pipeline-descriptor) 'layout)
-                (null-pointer))
+    ;; Track extra allocations for vertex buffer layout foreign memory.
+    (let ((extra-frees '()))
+      (unwind-protect
+          (progn
+            (setf (foreign-slot-value desc '(:struct wgpu-render-pipeline-descriptor) 'next-in-chain)
+                  (null-pointer))
+            (%set-string-view (foreign-slot-pointer desc '(:struct wgpu-render-pipeline-descriptor) 'label) label)
+            (setf (foreign-slot-value desc '(:struct wgpu-render-pipeline-descriptor) 'layout)
+                  (null-pointer))
 
-          ;; vertex state
-          (let ((v (foreign-slot-pointer desc '(:struct wgpu-render-pipeline-descriptor) 'vertex)))
-            (setf (foreign-slot-value v '(:struct wgpu-vertex-state) 'next-in-chain) (null-pointer)
-                  (foreign-slot-value v '(:struct wgpu-vertex-state) 'module) (handle vertex-module))
-            (let ((ep (foreign-slot-pointer v '(:struct wgpu-vertex-state) 'entry-point)))
-              (setf (foreign-slot-value ep '(:struct wgpu-string-view) 'data) vep-data
-                    (foreign-slot-value ep '(:struct wgpu-string-view) 'length) vep-len))
-            (setf (foreign-slot-value v '(:struct wgpu-vertex-state) 'constant-count) 0
-                  (foreign-slot-value v '(:struct wgpu-vertex-state) 'constants) (null-pointer)
-                  (foreign-slot-value v '(:struct wgpu-vertex-state) 'buffer-count) 0
-                  (foreign-slot-value v '(:struct wgpu-vertex-state) 'buffers) (null-pointer)))
+            ;; vertex state
+            (let ((v (foreign-slot-pointer desc '(:struct wgpu-render-pipeline-descriptor) 'vertex)))
+              (setf (foreign-slot-value v '(:struct wgpu-vertex-state) 'next-in-chain) (null-pointer)
+                    (foreign-slot-value v '(:struct wgpu-vertex-state) 'module) (handle vertex-module))
+              (let ((ep (foreign-slot-pointer v '(:struct wgpu-vertex-state) 'entry-point)))
+                (setf (foreign-slot-value ep '(:struct wgpu-string-view) 'data) vep-data
+                      (foreign-slot-value ep '(:struct wgpu-string-view) 'length) vep-len))
+              (setf (foreign-slot-value v '(:struct wgpu-vertex-state) 'constant-count) 0
+                    (foreign-slot-value v '(:struct wgpu-vertex-state) 'constants) (null-pointer))
+              (if vertex-buffer-layouts
+                  (multiple-value-bind (lptr aptrs n)
+                      (%build-vertex-buffer-layouts vertex-buffer-layouts)
+                    ;; track for cleanup
+                    (push lptr extra-frees)
+                    (dolist (ap aptrs) (push ap extra-frees))
+                    (setf (foreign-slot-value v '(:struct wgpu-vertex-state) 'buffer-count) n
+                          (foreign-slot-value v '(:struct wgpu-vertex-state) 'buffers) lptr))
+                  (setf (foreign-slot-value v '(:struct wgpu-vertex-state) 'buffer-count) 0
+                        (foreign-slot-value v '(:struct wgpu-vertex-state) 'buffers) (null-pointer))))
 
           ;; primitive state
           (let ((p (foreign-slot-pointer desc '(:struct wgpu-render-pipeline-descriptor) 'primitive)))
@@ -311,11 +373,15 @@ names (e.g. \"vs_main\" / \"fs_main\" as produced by the cl-webgpu/shader DSL)."
             (when (null-pointer-p ptr)
               (error "Failed to create render pipeline"))
             (make-instance 'gpu-render-pipeline :handle ptr)))
-      (foreign-free vep-data)
-      (foreign-free fep-data)
-      (foreign-free frag-state)
-      (foreign-free color-target)
-      (foreign-free desc))))
+        ;; Free fixed allocations and any extra vertex-layout foreign memory.
+        (foreign-free vep-data)
+        (foreign-free fep-data)
+        (foreign-free frag-state)
+        (foreign-free color-target)
+        (foreign-free desc)
+        (dolist (p extra-frees)
+          (unless (null-pointer-p p)
+            (foreign-free p)))))))
 
 (defun configure-surface (surface device format width height)
   "Configure SURFACE for rendering. Call once after device creation."
