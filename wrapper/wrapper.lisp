@@ -33,6 +33,7 @@
 (defclass gpu-texture-view   (gpu-handle) ())
 (defclass gpu-queue          (gpu-handle) ())
 (defclass gpu-buffer         (gpu-handle) ())
+(defclass gpu-texture        (gpu-handle) ())
 
 (defmethod release ((obj gpu-instance))        (wgpu-instance-release       (handle obj)))
 (defmethod release ((obj gpu-adapter))         (wgpu-adapter-release        (handle obj)))
@@ -49,6 +50,9 @@
 (defmethod release ((obj gpu-buffer))
   (wgpu-buffer-destroy (handle obj))
   (wgpu-buffer-release (handle obj)))
+(defmethod release ((obj gpu-texture))
+  (wgpu-texture-destroy (handle obj))
+  (wgpu-texture-release (handle obj)))
 
 
 ;;;; -------------------------------------------------------------------------
@@ -264,8 +268,9 @@ All returned pointers must be freed by the caller after pipeline creation."
                                          fragment-entry-point
                                          surface-format
                                          vertex-buffer-layouts
+                                         depth-stencil-state
                                          label)
-  "Build a render pipeline (no depth). Returns GPU-RENDER-PIPELINE.
+  "Build a render pipeline. Returns GPU-RENDER-PIPELINE.
 
 ENTRY-POINT (default \"main\") is the shared fallback for both shader stages.
 VERTEX-ENTRY-POINT and FRAGMENT-ENTRY-POINT override the entry-point name for
@@ -283,7 +288,15 @@ Example with two separate attribute buffers (position slot 0, colour slot 1):
   '((:array-stride 12 :step-mode :vertex
      :attributes ((:format :float32x3 :offset 0 :shader-location 0)))
     (:array-stride 16 :step-mode :vertex
-     :attributes ((:format :float32x4 :offset 0 :shader-location 1))))"
+     :attributes ((:format :float32x4 :offset 0 :shader-location 1))))
+
+DEPTH-STENCIL-STATE is an optional plist enabling depth testing. Supported keys:
+  :format               — depth texture format (default :depth24-plus)
+  :depth-write-enabled  — write to depth buffer (default t)
+  :depth-compare        — depth comparison function (default :less)
+Stencil is disabled (stencil-write-mask 0, compare :always).
+
+Example:  :depth-stencil-state '(:format :depth24-plus :depth-compare :less)"
   (let* ((vep      (or vertex-entry-point entry-point))
          (fep      (or fragment-entry-point entry-point))
          (desc         (foreign-alloc '(:struct wgpu-render-pipeline-descriptor)))
@@ -332,9 +345,33 @@ Example with two separate attribute buffers (position slot 0, colour slot 1):
                   (foreign-slot-value p '(:struct wgpu-primitive-state) 'cull-mode) :none
                   (foreign-slot-value p '(:struct wgpu-primitive-state) 'unclipped-depth) 0))
 
-          ;; no depth/stencil
-          (setf (foreign-slot-value desc '(:struct wgpu-render-pipeline-descriptor) 'depth-stencil)
-                (null-pointer))
+          ;; depth/stencil state (optional; nil disables depth testing)
+          (if depth-stencil-state
+              (let ((ds (foreign-alloc '(:struct wgpu-depth-stencil-state))))
+                (push ds extra-frees)
+                (setf (foreign-slot-value ds '(:struct wgpu-depth-stencil-state) 'next-in-chain) (null-pointer)
+                      (foreign-slot-value ds '(:struct wgpu-depth-stencil-state) 'format)
+                        (or (getf depth-stencil-state :format) :depth24-plus)
+                      (foreign-slot-value ds '(:struct wgpu-depth-stencil-state) 'depth-write-enabled)
+                        (if (getf depth-stencil-state :depth-write-enabled t) :true :false)
+                      (foreign-slot-value ds '(:struct wgpu-depth-stencil-state) 'depth-compare)
+                        (or (getf depth-stencil-state :depth-compare) :less)
+                      (foreign-slot-value ds '(:struct wgpu-depth-stencil-state) 'stencil-read-mask) #xFFFFFFFF
+                      (foreign-slot-value ds '(:struct wgpu-depth-stencil-state) 'stencil-write-mask) 0
+                      (foreign-slot-value ds '(:struct wgpu-depth-stencil-state) 'depth-bias) 0
+                      (foreign-slot-value ds '(:struct wgpu-depth-stencil-state) 'depth-bias-slope-scale) 0.0
+                      (foreign-slot-value ds '(:struct wgpu-depth-stencil-state) 'depth-bias-clamp) 0.0)
+                ;; stencil face states — no stencil (always/keep)
+                (dolist (face-slot '(stencil-front stencil-back))
+                  (let ((sf (foreign-slot-pointer ds '(:struct wgpu-depth-stencil-state) face-slot)))
+                    (setf (foreign-slot-value sf '(:struct wgpu-stencil-face-state) 'compare)       :always
+                          (foreign-slot-value sf '(:struct wgpu-stencil-face-state) 'fail-op)       :keep
+                          (foreign-slot-value sf '(:struct wgpu-stencil-face-state) 'depth-fail-op) :keep
+                          (foreign-slot-value sf '(:struct wgpu-stencil-face-state) 'pass-op)       :keep)))
+                (setf (foreign-slot-value desc '(:struct wgpu-render-pipeline-descriptor) 'depth-stencil) ds))
+              ;; no depth/stencil
+              (setf (foreign-slot-value desc '(:struct wgpu-render-pipeline-descriptor) 'depth-stencil)
+                    (null-pointer)))
 
           ;; multisample state
           (let ((ms (foreign-slot-pointer desc '(:struct wgpu-render-pipeline-descriptor) 'multisample)))
@@ -410,38 +447,66 @@ Example with two separate attribute buffers (position slot 0, colour slot 1):
 
 (defun begin-render-pass (encoder texture-view
                           &key (clear-r 0.0d0) (clear-g 0.0d0)
-                               (clear-b 0.0d0) (clear-a 1.0d0))
+                               (clear-b 0.0d0) (clear-a 1.0d0)
+                               depth-view
+                               (depth-clear-value 1.0))
   "Begin a render pass with a single colour attachment. Returns a GPU-RENDER-PASS.
-The caller must call RELEASE on the returned pass or use WITH-RENDER-PASS."
-  (let ((att  (foreign-alloc '(:struct wgpu-render-pass-color-attachment)))
-        (desc (foreign-alloc '(:struct wgpu-render-pass-descriptor))))
-    ;; colour attachment
-    (setf (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'next-in-chain) (null-pointer)
-          (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'view)
-          (etypecase texture-view
-            (gpu-texture-view (handle texture-view))
-            (t texture-view))
-          (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'depth-slice) #xFFFFFFFF
-          (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'resolve-target) (null-pointer)
-          (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'load-op) :clear
-          (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'store-op) :store)
-    (let ((cc (foreign-slot-pointer att '(:struct wgpu-render-pass-color-attachment) 'clear-value)))
-      (setf (foreign-slot-value cc '(:struct wgpu-color) 'r) (float clear-r 1.0d0)
-            (foreign-slot-value cc '(:struct wgpu-color) 'g) (float clear-g 1.0d0)
-            (foreign-slot-value cc '(:struct wgpu-color) 'b) (float clear-b 1.0d0)
-            (foreign-slot-value cc '(:struct wgpu-color) 'a) (float clear-a 1.0d0)))
-    ;; pass descriptor
-    (setf (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'next-in-chain) (null-pointer))
-    (%set-string-view (foreign-slot-pointer desc '(:struct wgpu-render-pass-descriptor) 'label) nil)
-    (setf (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'color-attachment-count) 1
-          (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'color-attachments) att
-          (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'depth-stencil-attachment) (null-pointer)
-          (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'occlusion-query-set) (null-pointer)
-          (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'timestamp-writes) (null-pointer))
-    (let ((pass (wgpu-command-encoder-begin-render-pass (handle encoder) desc)))
+The caller must call RELEASE on the returned pass or use WITH-RENDER-PASS.
+
+When DEPTH-VIEW (a GPU-TEXTURE-VIEW for a depth texture) is supplied the pass
+includes a depth-stencil attachment cleared to DEPTH-CLEAR-VALUE (default 1.0).
+Stencil operations are left undefined (no stencil)."
+  (let ((att      (foreign-alloc '(:struct wgpu-render-pass-color-attachment)))
+        (desc     (foreign-alloc '(:struct wgpu-render-pass-descriptor)))
+        (depth-att (when depth-view
+                     (foreign-alloc '(:struct wgpu-render-pass-depth-stencil-attachment)))))
+    (unwind-protect
+        (progn
+          ;; colour attachment
+          (setf (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'next-in-chain) (null-pointer)
+                (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'view)
+                (etypecase texture-view
+                  (gpu-texture-view (handle texture-view))
+                  (t texture-view))
+                (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'depth-slice) #xFFFFFFFF
+                (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'resolve-target) (null-pointer)
+                (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'load-op) :clear
+                (foreign-slot-value att '(:struct wgpu-render-pass-color-attachment) 'store-op) :store)
+          (let ((cc (foreign-slot-pointer att '(:struct wgpu-render-pass-color-attachment) 'clear-value)))
+            (setf (foreign-slot-value cc '(:struct wgpu-color) 'r) (float clear-r 1.0d0)
+                  (foreign-slot-value cc '(:struct wgpu-color) 'g) (float clear-g 1.0d0)
+                  (foreign-slot-value cc '(:struct wgpu-color) 'b) (float clear-b 1.0d0)
+                  (foreign-slot-value cc '(:struct wgpu-color) 'a) (float clear-a 1.0d0)))
+          ;; optional depth-stencil attachment
+          (when depth-att
+            (setf (foreign-slot-value depth-att '(:struct wgpu-render-pass-depth-stencil-attachment) 'next-in-chain) (null-pointer)
+                  (foreign-slot-value depth-att '(:struct wgpu-render-pass-depth-stencil-attachment) 'view)
+                  (etypecase depth-view
+                    (gpu-texture-view (handle depth-view))
+                    (t depth-view))
+                  (foreign-slot-value depth-att '(:struct wgpu-render-pass-depth-stencil-attachment) 'depth-load-op) :clear
+                  (foreign-slot-value depth-att '(:struct wgpu-render-pass-depth-stencil-attachment) 'depth-store-op) :store
+                  (foreign-slot-value depth-att '(:struct wgpu-render-pass-depth-stencil-attachment) 'depth-clear-value) (float depth-clear-value 1.0)
+                  (foreign-slot-value depth-att '(:struct wgpu-render-pass-depth-stencil-attachment) 'depth-read-only) 0
+                  ;; stencil: leave undefined (no stencil in use)
+                  (foreign-slot-value depth-att '(:struct wgpu-render-pass-depth-stencil-attachment) 'stencil-load-op) :undefined
+                  (foreign-slot-value depth-att '(:struct wgpu-render-pass-depth-stencil-attachment) 'stencil-store-op) :undefined
+                  (foreign-slot-value depth-att '(:struct wgpu-render-pass-depth-stencil-attachment) 'stencil-clear-value) 0
+                  (foreign-slot-value depth-att '(:struct wgpu-render-pass-depth-stencil-attachment) 'stencil-read-only) 1))
+          ;; pass descriptor
+          (setf (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'next-in-chain) (null-pointer))
+          (%set-string-view (foreign-slot-pointer desc '(:struct wgpu-render-pass-descriptor) 'label) nil)
+          (setf (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'color-attachment-count) 1
+                (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'color-attachments) att
+                (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'depth-stencil-attachment)
+                (if depth-att depth-att (null-pointer))
+                (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'occlusion-query-set) (null-pointer)
+                (foreign-slot-value desc '(:struct wgpu-render-pass-descriptor) 'timestamp-writes) (null-pointer))
+          (make-instance 'gpu-render-pass
+                         :handle (wgpu-command-encoder-begin-render-pass (handle encoder) desc)))
       (foreign-free desc)
       (foreign-free att)
-      (make-instance 'gpu-render-pass :handle pass))))
+      (when depth-att (foreign-free depth-att)))))
 
 (defun end-and-submit (encoder pass queue surface)
   "End PASS, finish ENCODER, submit to QUEUE, and present SURFACE.
@@ -457,3 +522,46 @@ Releases the command buffer; does not release ENCODER, PASS, QUEUE, or SURFACE."
         (wgpu-queue-submit (handle queue) 1 bufs))
       (wgpu-command-buffer-release cmd-buf)))
   (wgpu-surface-present (handle surface)))
+
+(defun make-depth-texture (device width height &key (format :depth24-plus))
+  "Create a depth texture and a depth-only view of the given dimensions.
+Returns two values: (GPU-TEXTURE GPU-TEXTURE-VIEW).
+The caller is responsible for releasing both (RELEASE texture then RELEASE view).
+
+FORMAT defaults to :DEPTH24-PLUS. Pass the view to BEGIN-RENDER-PASS as :DEPTH-VIEW
+and use the same FORMAT keyword for the pipeline's :DEPTH-STENCIL-STATE.
+
+NOTE: The #xFFFFFFFF sentinel for mip-level-count and array-layer-count instructs
+WebGPU to use the full mip/layer range of the texture."
+  (let* ((tex-desc (foreign-alloc '(:struct wgpu-texture-descriptor)))
+         tex-ptr tex-view-ptr)
+    (unwind-protect
+        (progn
+          (setf (foreign-slot-value tex-desc '(:struct wgpu-texture-descriptor) 'next-in-chain) (null-pointer))
+          (%set-string-view (foreign-slot-pointer tex-desc '(:struct wgpu-texture-descriptor) 'label) nil)
+          (setf (foreign-slot-value tex-desc '(:struct wgpu-texture-descriptor) 'usage)
+                +wgpu-texture-usage-render-attachment+
+                (foreign-slot-value tex-desc '(:struct wgpu-texture-descriptor) 'dimension) :2-d
+                (foreign-slot-value tex-desc '(:struct wgpu-texture-descriptor) 'format) format
+                (foreign-slot-value tex-desc '(:struct wgpu-texture-descriptor) 'mip-level-count) 1
+                (foreign-slot-value tex-desc '(:struct wgpu-texture-descriptor) 'sample-count) 1
+                (foreign-slot-value tex-desc '(:struct wgpu-texture-descriptor) 'view-format-count) 0
+                (foreign-slot-value tex-desc '(:struct wgpu-texture-descriptor) 'view-formats) (null-pointer))
+          (let ((sz (foreign-slot-pointer tex-desc '(:struct wgpu-texture-descriptor) 'size)))
+            (setf (foreign-slot-value sz '(:struct wgpu-extent3-d) 'width)  width
+                  (foreign-slot-value sz '(:struct wgpu-extent3-d) 'height) height
+                  (foreign-slot-value sz '(:struct wgpu-extent3-d) 'depth-or-array-layers) 1))
+          (setf tex-ptr (wgpu-device-create-texture (handle device) tex-desc))
+          ;; Create a depth-only view
+          (with-wgpu-struct (vd '(:struct wgpu-texture-view-descriptor))
+            (setf (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'format) format
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'dimension) :2-d
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'base-mip-level) 0
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'mip-level-count) #xFFFFFFFF
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'base-array-layer) 0
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'array-layer-count) #xFFFFFFFF
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'aspect) :depth-only)
+            (setf tex-view-ptr (wgpu-texture-create-view tex-ptr vd)))
+          (values (make-instance 'gpu-texture      :handle tex-ptr)
+                  (make-instance 'gpu-texture-view :handle tex-view-ptr)))
+      (foreign-free tex-desc))))

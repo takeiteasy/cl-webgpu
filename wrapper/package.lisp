@@ -19,6 +19,12 @@
    #:wgpu-render-pass-color-attachment #:wgpu-color
    #:wgpu-command-buffer-descriptor #:wgpu-texture-view-descriptor
    #:wgpu-surface-texture
+   ;; struct types for depth-stencil support
+   #:wgpu-depth-stencil-state #:wgpu-render-pass-depth-stencil-attachment
+   #:wgpu-stencil-face-state #:wgpu-texture-descriptor #:wgpu-extent3-d
+   ;; enums for depth-stencil and texture creation
+   #:wgpu-compare-function #:wgpu-optional-bool
+   #:wgpu-texture-dimension #:wgpu-texture-aspect #:wgpu-texture-view-dimension
    ;; functions
    #:wgpu-create-instance #:wgpu-instance-release
    #:wgpu-shim-instance-request-adapter-sync #:wgpu-adapter-release
@@ -39,6 +45,8 @@
    #:wgpu-texture-create-view #:wgpu-texture-view-release
    #:wgpu-buffer-destroy #:wgpu-buffer-release
    #:%get-silent-uncaptured-error-callback
+   ;; texture creation and release (depth texture support)
+   #:wgpu-device-create-texture #:wgpu-texture-destroy #:wgpu-texture-release
    ;; struct types for vertex buffer layout support
    #:wgpu-vertex-buffer-layout #:wgpu-vertex-attribute
    ;; enums used as CFFI types in wrapper
@@ -68,14 +76,27 @@
    #:occlusion-query-set #:depth-stencil-attachment #:timestamp-writes
    #:format-count #:formats
    ;; vertex buffer layout slot names
-   #:step-mode #:array-stride #:attribute-count #:attributes #:shader-location #:offset)
+   #:step-mode #:array-stride #:attribute-count #:attributes #:shader-location #:offset
+   ;; depth-stencil state slot names
+   #:depth-write-enabled #:depth-compare
+   #:stencil-front #:stencil-back #:stencil-read-mask #:stencil-write-mask
+   #:depth-bias #:depth-bias-slope-scale #:depth-bias-clamp
+   ;; depth-stencil attachment slot names
+   #:depth-load-op #:depth-store-op #:depth-clear-value #:depth-read-only
+   #:stencil-load-op #:stencil-store-op #:stencil-clear-value #:stencil-read-only
+   ;; stencil face state slot names
+   #:compare #:fail-op #:depth-fail-op #:pass-op
+   ;; texture descriptor slot names
+   #:mip-level-count #:sample-count #:dimension #:depth-or-array-layers
+   ;; texture view descriptor slot names
+   #:base-mip-level #:base-array-layer #:array-layer-count #:aspect)
   (:export
    ;; base class + generics
    #:gpu-handle #:handle #:release #:null-handle-p
    ;; handle classes
    #:gpu-instance #:gpu-adapter #:gpu-device #:gpu-surface
    #:gpu-shader-module #:gpu-render-pipeline #:gpu-command-encoder
-   #:gpu-render-pass #:gpu-texture-view #:gpu-queue #:gpu-buffer
+   #:gpu-render-pass #:gpu-texture-view #:gpu-queue #:gpu-buffer #:gpu-texture
    ;; scoped struct helper
    #:with-wgpu-struct
    ;; with-X macros
@@ -92,4 +113,5 @@
    #:configure-surface
    #:make-command-encoder
    #:begin-render-pass
-   #:end-and-submit))
+   #:end-and-submit
+   #:make-depth-texture))
