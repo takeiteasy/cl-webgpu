@@ -222,14 +222,25 @@
 
 (defun make-render-pipeline (device &key vertex-module fragment-module
                                          (entry-point "main")
+                                         vertex-entry-point
+                                         fragment-entry-point
                                          surface-format
                                          label)
-  "Build a simple render pipeline (no depth, no vertex buffers). Returns GPU-RENDER-PIPELINE."
-  (let ((desc         (foreign-alloc '(:struct wgpu-render-pipeline-descriptor)))
-        (frag-state   (foreign-alloc '(:struct wgpu-fragment-state)))
-        (color-target (foreign-alloc '(:struct wgpu-color-target-state)))
-        (ep-data      (foreign-string-alloc entry-point))
-        (ep-len       (length entry-point)))
+  "Build a simple render pipeline (no depth, no vertex buffers). Returns GPU-RENDER-PIPELINE.
+
+ENTRY-POINT (default \"main\") is the shared fallback for both shader stages.
+VERTEX-ENTRY-POINT and FRAGMENT-ENTRY-POINT override the entry-point name for
+each stage independently — use these when vertex and fragment stages have distinct
+names (e.g. \"vs_main\" / \"fs_main\" as produced by the cl-webgpu/shader DSL)."
+  (let* ((vep      (or vertex-entry-point entry-point))
+         (fep      (or fragment-entry-point entry-point))
+         (desc         (foreign-alloc '(:struct wgpu-render-pipeline-descriptor)))
+         (frag-state   (foreign-alloc '(:struct wgpu-fragment-state)))
+         (color-target (foreign-alloc '(:struct wgpu-color-target-state)))
+         (vep-data     (foreign-string-alloc vep))
+         (vep-len      (length vep))
+         (fep-data     (foreign-string-alloc fep))
+         (fep-len      (length fep)))
     (unwind-protect
         (progn
           (setf (foreign-slot-value desc '(:struct wgpu-render-pipeline-descriptor) 'next-in-chain)
@@ -243,8 +254,8 @@
             (setf (foreign-slot-value v '(:struct wgpu-vertex-state) 'next-in-chain) (null-pointer)
                   (foreign-slot-value v '(:struct wgpu-vertex-state) 'module) (handle vertex-module))
             (let ((ep (foreign-slot-pointer v '(:struct wgpu-vertex-state) 'entry-point)))
-              (setf (foreign-slot-value ep '(:struct wgpu-string-view) 'data) ep-data
-                    (foreign-slot-value ep '(:struct wgpu-string-view) 'length) ep-len))
+              (setf (foreign-slot-value ep '(:struct wgpu-string-view) 'data) vep-data
+                    (foreign-slot-value ep '(:struct wgpu-string-view) 'length) vep-len))
             (setf (foreign-slot-value v '(:struct wgpu-vertex-state) 'constant-count) 0
                   (foreign-slot-value v '(:struct wgpu-vertex-state) 'constants) (null-pointer)
                   (foreign-slot-value v '(:struct wgpu-vertex-state) 'buffer-count) 0
@@ -286,8 +297,8 @@
                 (foreign-slot-value frag-state '(:struct wgpu-fragment-state) 'module)
                 (handle fragment-module))
           (let ((ep (foreign-slot-pointer frag-state '(:struct wgpu-fragment-state) 'entry-point)))
-            (setf (foreign-slot-value ep '(:struct wgpu-string-view) 'data) ep-data
-                  (foreign-slot-value ep '(:struct wgpu-string-view) 'length) ep-len))
+            (setf (foreign-slot-value ep '(:struct wgpu-string-view) 'data) fep-data
+                  (foreign-slot-value ep '(:struct wgpu-string-view) 'length) fep-len))
           (setf (foreign-slot-value frag-state '(:struct wgpu-fragment-state) 'constant-count) 0
                 (foreign-slot-value frag-state '(:struct wgpu-fragment-state) 'constants) (null-pointer)
                 (foreign-slot-value frag-state '(:struct wgpu-fragment-state) 'target-count) 1
@@ -300,7 +311,8 @@
             (when (null-pointer-p ptr)
               (error "Failed to create render pipeline"))
             (make-instance 'gpu-render-pipeline :handle ptr)))
-      (foreign-free ep-data)
+      (foreign-free vep-data)
+      (foreign-free fep-data)
       (foreign-free frag-state)
       (foreign-free color-target)
       (foreign-free desc))))
