@@ -10,6 +10,7 @@
    :inout
    :generate-stage
    :generate-shader
+   :struct-fields
    :compile-form
    :stage
    :*modified-function-hook*))

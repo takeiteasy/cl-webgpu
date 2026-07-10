@@ -233,6 +233,27 @@ slot names or array indices for each leaf uniform."
 
 
 
+(defun struct-fields (struct-name)
+  "Return an ordered list of (NAME TYPE-KEYWORD LOCATION BUILTIN) for a DSL struct
+registered under STRUCT-NAME, in declaration order.
+LOCATION and BUILTIN are NIL for un-annotated (plain) fields.
+
+STRUCT-NAME must be a symbol whose home package contains the struct definition
+(i.e. the package that was current when DEFSTRUCT was evaluated).  For structs
+defined via the cl-webgpu/shader/cl package (e.g. in a package that :use-s it),
+pass the symbol as interned in that user package."
+  (bordeaux-threads:with-lock-held (*compiler-lock*)
+    (cl-webgpu/shader/internal::with-package-environment (struct-name)
+      (let ((st (get-type-binding struct-name)))
+        (unless st
+          (error "No DSL struct named ~s found in environment for package ~s"
+                 struct-name (symbol-package struct-name)))
+        (loop for b in (bindings st)
+              collect (list (name b)
+                            (name (value-type b))
+                            (when (typep b 'annotated-binding) (binding-location b))
+                            (when (typep b 'annotated-binding) (binding-builtin b))))))))
+
 (defun generate-shader (&key vertex fragment compute (expand-uniform-slots nil) (preamble nil))
   "Generate a single WGSL string with all specified stages.
 VERTEX, FRAGMENT, and COMPUTE are symbols naming entry point functions.
