@@ -87,7 +87,7 @@
    ;; stencil face state slot names
    #:compare #:fail-op #:depth-fail-op #:pass-op
    ;; texture descriptor slot names
-   #:mip-level-count #:sample-count #:dimension #:depth-or-array-layers
+   #:size #:mip-level-count #:sample-count #:dimension #:depth-or-array-layers
    ;; texture view descriptor slot names
    #:base-mip-level #:base-array-layer #:array-layer-count #:aspect)
   (:export
