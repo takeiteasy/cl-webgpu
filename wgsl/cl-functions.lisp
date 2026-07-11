@@ -1216,12 +1216,12 @@
       ;; 8.13 fragment processing functions
       (add/s
        ;; 8.13.1 derivative functions
-       ((cl-webgpu/shader/internal:dfdx "dFdx") (p) `((or ,@gen-type)) '(= 0))
-       ((cl-webgpu/shader/internal:dfdy "dFdy") (p) `((or ,@gen-type)) '(= 0))
-       ((cl-webgpu/shader/internal:dfdx-fine "dFdxFine") (p) `((or ,@gen-type)) '(= 0))
-       ((cl-webgpu/shader/internal:dfdy-fine "dFdyFine") (p) `((or ,@gen-type)) '(= 0))
-       ((cl-webgpu/shader/internal:dfdx-coarse "dFdxCoarse") (p) `((or ,@gen-type)) '(= 0))
-       ((cl-webgpu/shader/internal:dfdy-coarse "dFdyCoarse") (p) `((or ,@gen-type)) '(= 0))
+       ((cl-webgpu/shader/internal:dfdx "dpdx") (p) `((or ,@gen-type)) '(= 0))
+       ((cl-webgpu/shader/internal:dfdy "dpdy") (p) `((or ,@gen-type)) '(= 0))
+       ((cl-webgpu/shader/internal:dfdx-fine "dpdxFine") (p) `((or ,@gen-type)) '(= 0))
+       ((cl-webgpu/shader/internal:dfdy-fine "dpdyFine") (p) `((or ,@gen-type)) '(= 0))
+       ((cl-webgpu/shader/internal:dfdx-coarse "dpdxCoarse") (p) `((or ,@gen-type)) '(= 0))
+       ((cl-webgpu/shader/internal:dfdy-coarse "dpdyCoarse") (p) `((or ,@gen-type)) '(= 0))
        (cl-webgpu/shader/internal:fwidth (p) `((or ,@gen-type)) '(= 0))
        (cl-webgpu/shader/internal:fwidth-fine (p) `((or ,@gen-type)) '(= 0))
        (cl-webgpu/shader/internal:fwidth-coarse (p) `((or ,@gen-type)) '(= 0))
