@@ -19,6 +19,12 @@
    #:wgpu-render-pass-color-attachment #:wgpu-color
    #:wgpu-command-buffer-descriptor #:wgpu-texture-view-descriptor
    #:wgpu-surface-texture
+   ;; buffer + bind-group types
+   #:wgpu-buffer-descriptor
+   #:wgpu-bind-group-descriptor #:wgpu-bind-group-entry
+   #:wgpu-sampler-descriptor
+   #:wgpu-texel-copy-texture-info #:wgpu-texel-copy-buffer-layout
+   #:wgpu-blend-state #:wgpu-blend-component
    ;; struct types for depth-stencil support
    #:wgpu-depth-stencil-state #:wgpu-render-pass-depth-stencil-attachment
    #:wgpu-stencil-face-state #:wgpu-texture-descriptor #:wgpu-extent3-d
@@ -45,14 +51,33 @@
    #:wgpu-texture-create-view #:wgpu-texture-view-release
    #:wgpu-buffer-destroy #:wgpu-buffer-release
    #:%get-silent-uncaptured-error-callback
-   ;; texture creation and release (depth texture support)
+   ;; texture creation and release (depth texture support + 2D upload)
    #:wgpu-device-create-texture #:wgpu-texture-destroy #:wgpu-texture-release
+   ;; buffer + texture upload functions
+   #:wgpu-device-create-buffer #:wgpu-queue-write-buffer #:wgpu-queue-write-texture
+   ;; sampler
+   #:wgpu-device-create-sampler #:wgpu-sampler-release
+   ;; bind-group
+   #:wgpu-device-create-bind-group #:wgpu-bind-group-release
+   #:wgpu-render-pipeline-get-bind-group-layout #:wgpu-bind-group-layout-release
+   ;; render-pass draw commands
+   #:wgpu-render-pass-encoder-set-vertex-buffer
+   #:wgpu-render-pass-encoder-set-index-buffer
+   #:wgpu-render-pass-encoder-set-bind-group
+   #:wgpu-render-pass-encoder-set-scissor-rect
+   #:wgpu-render-pass-encoder-draw-indexed
    ;; struct types for vertex buffer layout support
    #:wgpu-vertex-buffer-layout #:wgpu-vertex-attribute
    ;; enums used as CFFI types in wrapper
    #:wgpu-texture-format #:wgpu-vertex-format #:wgpu-vertex-step-mode
    ;; constants
    #:+wgpu-texture-usage-render-attachment+
+   #:+wgpu-texture-usage-texture-binding+
+   #:+wgpu-texture-usage-copy-dst+
+   #:+wgpu-buffer-usage-vertex+
+   #:+wgpu-buffer-usage-index+
+   #:+wgpu-buffer-usage-uniform+
+   #:+wgpu-buffer-usage-copy-dst+
    ;; struct slot names — now exported from cl-webgpu (ticket #18 resolved)
    #:next-in-chain #:next #:s-type
    #:data #:length
@@ -77,6 +102,18 @@
    #:format-count #:formats
    ;; vertex buffer layout slot names
    #:step-mode #:array-stride #:attribute-count #:attributes #:shader-location #:offset
+   ;; buffer descriptor slot names
+   #:mapped-at-creation
+   ;; bind-group slot names
+   #:entry-count #:entries #:binding #:buffer #:sampler #:texture-view
+   ;; blend state slot names
+   #:color #:alpha #:src-factor #:dst-factor #:operation
+   ;; sampler descriptor slot names
+   #:address-mode-u #:address-mode-v #:address-mode-w
+   #:mag-filter #:min-filter #:mipmap-filter #:lod-min-clamp #:lod-max-clamp
+   #:max-anisotropy
+   ;; texel-copy slot names
+   #:bytes-per-row #:rows-per-image #:mip-level #:origin #:texture
    ;; depth-stencil state slot names
    #:depth-write-enabled #:depth-compare
    #:stencil-front #:stencil-back #:stencil-read-mask #:stencil-write-mask
@@ -114,4 +151,21 @@
    #:make-command-encoder
    #:begin-render-pass
    #:end-and-submit
-   #:make-depth-texture))
+   #:make-depth-texture
+   ;; buffer helpers
+   #:make-buffer
+   #:write-buffer
+   ;; texture helpers
+   #:make-texture-2d
+   #:write-texture
+   ;; sampler helper
+   #:make-sampler
+   ;; bind-group helpers
+   #:get-pipeline-bind-group-layout
+   #:make-bind-group
+   ;; render-pass draw helpers
+   #:set-vertex-buffer
+   #:set-index-buffer
+   #:set-bind-group
+   #:set-scissor-rect
+   #:draw-indexed))

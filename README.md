@@ -9,6 +9,7 @@ Common Lisp FFI bindings for [WebGPU](https://www.w3.org/TR/webgpu/) via [wgpu-n
 - **Rust / Cargo** — to build wgpu-native from source (or use a pre-built binary)
 - **GLFW 3** — for windowed examples (install via Homebrew, apt, etc.)
 - **C compiler** (`cc` / `clang` / `gcc`)
+- **cl-nuklear** — required for `cl-webgpu/nuklear` only; symlink `../cl-nuklear` into `~/quicklisp/local-projects/`
 
 ## Building
 
@@ -61,6 +62,7 @@ The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), whi
 | `cl-webgpu/glfw` | GLFW surface creation helper |
 | `cl-webgpu/wrapper` | CLOS wrapper layer — easy-to-use API |
 | `cl-webgpu/shader` | WGSL shader DSL |
+| `cl-webgpu/nuklear` | Nuklear immediate-mode GUI backend (requires `cl-nuklear`) |
 | `cl-webgpu/codegen` | Re-generates `cl-webgpu` bindings from C headers |
 
 ## Wrapper Layer (`cl-webgpu/wrapper`)

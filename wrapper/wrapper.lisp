@@ -269,6 +269,7 @@ All returned pointers must be freed by the caller after pipeline creation."
                                          surface-format
                                          vertex-buffer-layouts
                                          depth-stencil-state
+                                         blend
                                          label)
   "Build a render pipeline. Returns GPU-RENDER-PIPELINE.
 
@@ -296,7 +297,15 @@ DEPTH-STENCIL-STATE is an optional plist enabling depth testing. Supported keys:
   :depth-compare        — depth comparison function (default :less)
 Stencil is disabled (stencil-write-mask 0, compare :always).
 
-Example:  :depth-stencil-state '(:format :depth24-plus :depth-compare :less)"
+BLEND is an optional plist enabling alpha blending on the colour target. Supported keys:
+  :color-src-factor     — (default :src-alpha)
+  :color-dst-factor     — (default :one-minus-src-alpha)
+  :color-operation      — (default :add)
+  :alpha-src-factor     — (default :one)
+  :alpha-dst-factor     — (default :one-minus-src-alpha)
+  :alpha-operation      — (default :add)
+
+Example:  :blend '() uses the defaults above (standard premultiplied alpha)"
   (let* ((vep      (or vertex-entry-point entry-point))
          (fep      (or fragment-entry-point entry-point))
          (desc         (foreign-alloc '(:struct wgpu-render-pipeline-descriptor)))
@@ -385,10 +394,28 @@ Example:  :depth-stencil-state '(:format :depth24-plus :depth-compare :less)"
                 (null-pointer)
                 (foreign-slot-value color-target '(:struct wgpu-color-target-state) 'format)
                 (or surface-format :bgra8-unorm)
-                (foreign-slot-value color-target '(:struct wgpu-color-target-state) 'blend)
-                (null-pointer)
                 (foreign-slot-value color-target '(:struct wgpu-color-target-state) 'write-mask)
                 #xF)
+          (if blend
+              (let ((bs (foreign-alloc '(:struct wgpu-blend-state))))
+                (push bs extra-frees)
+                (let ((color (foreign-slot-pointer bs '(:struct wgpu-blend-state) 'color))
+                      (alpha (foreign-slot-pointer bs '(:struct wgpu-blend-state) 'alpha)))
+                  (setf (foreign-slot-value color '(:struct wgpu-blend-component) 'src-factor)
+                        (or (getf blend :color-src-factor) :src-alpha)
+                        (foreign-slot-value color '(:struct wgpu-blend-component) 'dst-factor)
+                        (or (getf blend :color-dst-factor) :one-minus-src-alpha)
+                        (foreign-slot-value color '(:struct wgpu-blend-component) 'operation)
+                        (or (getf blend :color-operation) :add)
+                        (foreign-slot-value alpha '(:struct wgpu-blend-component) 'src-factor)
+                        (or (getf blend :alpha-src-factor) :one)
+                        (foreign-slot-value alpha '(:struct wgpu-blend-component) 'dst-factor)
+                        (or (getf blend :alpha-dst-factor) :one-minus-src-alpha)
+                        (foreign-slot-value alpha '(:struct wgpu-blend-component) 'operation)
+                        (or (getf blend :alpha-operation) :add)))
+                (setf (foreign-slot-value color-target '(:struct wgpu-color-target-state) 'blend) bs))
+              (setf (foreign-slot-value color-target '(:struct wgpu-color-target-state) 'blend)
+                    (null-pointer)))
 
           ;; fragment state
           (setf (foreign-slot-value frag-state '(:struct wgpu-fragment-state) 'next-in-chain)
@@ -522,6 +549,228 @@ Releases the command buffer; does not release ENCODER, PASS, QUEUE, or SURFACE."
         (wgpu-queue-submit (handle queue) 1 bufs))
       (wgpu-command-buffer-release cmd-buf)))
   (wgpu-surface-present (handle surface)))
+
+;;;; -------------------------------------------------------------------------
+;;;; Buffer helpers
+;;;; -------------------------------------------------------------------------
+
+(defun make-buffer (device &key size (usage 0) (mapped-at-creation nil) label)
+  "Create a WGPUBuffer. Returns a GPU-BUFFER.
+
+USAGE is a bitwise-OR of +wgpu-buffer-usage-*+ constants.
+MAPPED-AT-CREATION when T maps the buffer at creation for initial upload."
+  (let ((desc (foreign-alloc '(:struct wgpu-buffer-descriptor)))
+        label-data)
+    (unwind-protect
+        (progn
+          (setf (foreign-slot-value desc '(:struct wgpu-buffer-descriptor) 'next-in-chain) (null-pointer))
+          (setf label-data
+                (%set-string-view (foreign-slot-pointer desc '(:struct wgpu-buffer-descriptor) 'label) label))
+          (setf (foreign-slot-value desc '(:struct wgpu-buffer-descriptor) 'usage)   usage
+                (foreign-slot-value desc '(:struct wgpu-buffer-descriptor) 'size)    size
+                (foreign-slot-value desc '(:struct wgpu-buffer-descriptor) 'mapped-at-creation)
+                (if mapped-at-creation 1 0))
+          (let ((ptr (wgpu-device-create-buffer (handle device) desc)))
+            (when (null-pointer-p ptr)
+              (error "Failed to create buffer"))
+            (make-instance 'gpu-buffer :handle ptr)))
+      (when label-data (foreign-free label-data))
+      (foreign-free desc))))
+
+(defun write-buffer (queue buffer offset data size)
+  "Upload SIZE bytes from foreign pointer DATA into BUFFER at byte OFFSET via QUEUE."
+  (wgpu-queue-write-buffer (handle queue) (handle buffer) offset data size))
+
+
+;;;; -------------------------------------------------------------------------
+;;;; Texture helpers
+;;;; -------------------------------------------------------------------------
+
+(defun make-texture-2d (device width height
+                        &key (format :rgba8-unorm)
+                             (usage (logior +wgpu-texture-usage-texture-binding+
+                                            +wgpu-texture-usage-copy-dst+))
+                             label)
+  "Create a 2D texture and a default view. Returns (values GPU-TEXTURE GPU-TEXTURE-VIEW).
+Defaults to RGBA8 format with texture-binding + copy-dst usage for atlas uploads."
+  (let* ((desc (foreign-alloc '(:struct wgpu-texture-descriptor)))
+         label-data tex-ptr tex-view-ptr)
+    (unwind-protect
+        (progn
+          (setf (foreign-slot-value desc '(:struct wgpu-texture-descriptor) 'next-in-chain) (null-pointer))
+          (setf label-data
+                (%set-string-view (foreign-slot-pointer desc '(:struct wgpu-texture-descriptor) 'label) label))
+          (setf (foreign-slot-value desc '(:struct wgpu-texture-descriptor) 'usage)     usage
+                (foreign-slot-value desc '(:struct wgpu-texture-descriptor) 'dimension) :2-d
+                (foreign-slot-value desc '(:struct wgpu-texture-descriptor) 'format)    format
+                (foreign-slot-value desc '(:struct wgpu-texture-descriptor) 'mip-level-count) 1
+                (foreign-slot-value desc '(:struct wgpu-texture-descriptor) 'sample-count)    1
+                (foreign-slot-value desc '(:struct wgpu-texture-descriptor) 'view-format-count) 0
+                (foreign-slot-value desc '(:struct wgpu-texture-descriptor) 'view-formats) (null-pointer))
+          (let ((sz (foreign-slot-pointer desc '(:struct wgpu-texture-descriptor) 'size)))
+            (setf (foreign-slot-value sz '(:struct wgpu-extent3-d) 'width)  width
+                  (foreign-slot-value sz '(:struct wgpu-extent3-d) 'height) height
+                  (foreign-slot-value sz '(:struct wgpu-extent3-d) 'depth-or-array-layers) 1))
+          (setf tex-ptr (wgpu-device-create-texture (handle device) desc))
+          (when (null-pointer-p tex-ptr)
+            (error "Failed to create texture"))
+          (with-wgpu-struct (vd '(:struct wgpu-texture-view-descriptor))
+            (setf (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'format)    format
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'dimension) :2-d
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'base-mip-level)    0
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'mip-level-count)   #xFFFFFFFF
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'base-array-layer)  0
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'array-layer-count) #xFFFFFFFF
+                  (foreign-slot-value vd '(:struct wgpu-texture-view-descriptor) 'aspect) :all)
+            (setf tex-view-ptr (wgpu-texture-create-view tex-ptr vd)))
+          (values (make-instance 'gpu-texture      :handle tex-ptr)
+                  (make-instance 'gpu-texture-view :handle tex-view-ptr)))
+      (when label-data (foreign-free label-data))
+      (foreign-free desc))))
+
+(defun write-texture (queue texture-view data data-size &key width height (bytes-per-row 0))
+  "Upload DATA (foreign pointer, DATA-SIZE bytes) to TEXTURE-VIEW as a full 2D image.
+BYTES-PER-ROW must be set to width * bytes-per-texel."
+  (with-foreign-object (dst '(:struct wgpu-texel-copy-texture-info))
+    (foreign-funcall "memset" :pointer dst :int 0
+                    :size (foreign-type-size '(:struct wgpu-texel-copy-texture-info)) :void)
+    (setf (foreign-slot-value dst '(:struct wgpu-texel-copy-texture-info) 'texture)
+          (etypecase texture-view
+            (gpu-texture      (handle texture-view))
+            (gpu-texture-view (handle texture-view))
+            (t texture-view))
+          (foreign-slot-value dst '(:struct wgpu-texel-copy-texture-info) 'mip-level) 0
+          (foreign-slot-value dst '(:struct wgpu-texel-copy-texture-info) 'aspect) :all)
+    (with-foreign-object (layout '(:struct wgpu-texel-copy-buffer-layout))
+      (setf (foreign-slot-value layout '(:struct wgpu-texel-copy-buffer-layout) 'offset) 0
+            (foreign-slot-value layout '(:struct wgpu-texel-copy-buffer-layout) 'bytes-per-row) bytes-per-row
+            (foreign-slot-value layout '(:struct wgpu-texel-copy-buffer-layout) 'rows-per-image) height)
+      (with-foreign-object (sz '(:struct wgpu-extent3-d))
+        (setf (foreign-slot-value sz '(:struct wgpu-extent3-d) 'width)  width
+              (foreign-slot-value sz '(:struct wgpu-extent3-d) 'height) height
+              (foreign-slot-value sz '(:struct wgpu-extent3-d) 'depth-or-array-layers) 1)
+        (wgpu-queue-write-texture (handle queue) dst data data-size layout sz)))))
+
+
+;;;; -------------------------------------------------------------------------
+;;;; Sampler helper
+;;;; -------------------------------------------------------------------------
+
+(defun make-sampler (device &key (mag-filter :linear) (min-filter :linear)
+                                 (address-mode :clamp-to-edge))
+  "Create a WGPUSampler. Returns a raw WGPUSampler handle (not a CLOS wrapper).
+ADDRESS-MODE applies to all three axes."
+  (with-wgpu-struct (desc '(:struct wgpu-sampler-descriptor))
+    (setf (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'next-in-chain) (null-pointer)
+          (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'address-mode-u) address-mode
+          (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'address-mode-v) address-mode
+          (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'address-mode-w) address-mode
+          (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'mag-filter) mag-filter
+          (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'min-filter)  min-filter
+          (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'mipmap-filter) :nearest
+          (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'lod-min-clamp) 0.0
+          (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'lod-max-clamp) 32.0
+          (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'compare) :undefined
+          (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'max-anisotropy) 1)
+    (%set-string-view (foreign-slot-pointer desc '(:struct wgpu-sampler-descriptor) 'label) nil)
+    (let ((ptr (wgpu-device-create-sampler (handle device) desc)))
+      (when (null-pointer-p ptr)
+        (error "Failed to create sampler"))
+      ptr)))
+
+
+;;;; -------------------------------------------------------------------------
+;;;; Bind-group helpers
+;;;; -------------------------------------------------------------------------
+
+(defun get-pipeline-bind-group-layout (pipeline group-index)
+  "Return the WGPUBindGroupLayout for GROUP-INDEX of PIPELINE (auto-layout mode)."
+  (wgpu-render-pipeline-get-bind-group-layout (handle pipeline) group-index))
+
+(defun make-bind-group (device layout entries)
+  "Create a WGPUBindGroup. Returns a raw WGPUBindGroup handle.
+
+LAYOUT is a raw WGPUBindGroupLayout handle.
+ENTRIES is a list of plists, each with:
+  :binding      — binding index (required)
+  :buffer       — a GPU-BUFFER or raw buffer handle (exclusive with :sampler/:texture-view)
+  :offset       — byte offset into buffer (default 0)
+  :size         — byte size for buffer binding (default 0 = whole buffer)
+  :sampler      — a raw WGPUSampler handle
+  :texture-view — a GPU-TEXTURE-VIEW or raw texture view handle"
+  (let* ((n     (length entries))
+         (eptr  (if (plusp n)
+                    (foreign-alloc '(:struct wgpu-bind-group-entry) :count n)
+                    (null-pointer))))
+    (unwind-protect
+        (progn
+          (loop for e in entries for i from 0 do
+                (let ((ep (mem-aptr eptr '(:struct wgpu-bind-group-entry) i)))
+                  (foreign-funcall "memset" :pointer ep :int 0
+                                  :size (foreign-type-size '(:struct wgpu-bind-group-entry)) :void)
+                  (setf (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'next-in-chain) (null-pointer)
+                        (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'binding)
+                        (getf e :binding 0))
+                  (let ((buf (getf e :buffer))
+                        (smp (getf e :sampler))
+                        (tv  (getf e :texture-view)))
+                    (cond
+                      (buf
+                       (setf (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'buffer)
+                             (etypecase buf (gpu-buffer (handle buf)) (t buf))
+                             (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'offset)
+                             (getf e :offset 0)
+                             (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'size)
+                             (getf e :size 0)))
+                      (smp
+                       (setf (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'sampler) smp))
+                      (tv
+                       (setf (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'texture-view)
+                             (etypecase tv
+                               (gpu-texture-view (handle tv))
+                               (t tv))))))))
+          (with-wgpu-struct (desc '(:struct wgpu-bind-group-descriptor))
+            (setf (foreign-slot-value desc '(:struct wgpu-bind-group-descriptor) 'next-in-chain) (null-pointer)
+                  (foreign-slot-value desc '(:struct wgpu-bind-group-descriptor) 'layout) layout
+                  (foreign-slot-value desc '(:struct wgpu-bind-group-descriptor) 'entry-count) n
+                  (foreign-slot-value desc '(:struct wgpu-bind-group-descriptor) 'entries)
+                  (if (plusp n) eptr (null-pointer)))
+            (%set-string-view (foreign-slot-pointer desc '(:struct wgpu-bind-group-descriptor) 'label) nil)
+            (let ((ptr (wgpu-device-create-bind-group (handle device) desc)))
+              (when (null-pointer-p ptr)
+                (error "Failed to create bind group"))
+              ptr)))
+      (unless (null-pointer-p eptr)
+        (foreign-free eptr)))))
+
+
+;;;; -------------------------------------------------------------------------
+;;;; Render-pass draw helpers (thin wrappers over FFI calls)
+;;;; -------------------------------------------------------------------------
+
+(defun set-vertex-buffer (pass slot buffer &key (offset 0) size)
+  "Bind BUFFER to vertex slot SLOT on PASS. SIZE defaults to the whole buffer."
+  (wgpu-render-pass-encoder-set-vertex-buffer
+   (handle pass) slot (handle buffer) offset (or size #xFFFFFFFFFFFFFFFF)))
+
+(defun set-index-buffer (pass buffer &key (format :uint16) (offset 0) size)
+  "Bind BUFFER as the index buffer on PASS."
+  (wgpu-render-pass-encoder-set-index-buffer
+   (handle pass) (handle buffer) format offset (or size #xFFFFFFFFFFFFFFFF)))
+
+(defun set-bind-group (pass group-index bind-group)
+  "Bind BIND-GROUP at GROUP-INDEX on PASS. BIND-GROUP is a raw WGPUBindGroup handle."
+  (wgpu-render-pass-encoder-set-bind-group (handle pass) group-index bind-group 0 (null-pointer)))
+
+(defun set-scissor-rect (pass x y width height)
+  "Set the scissor rect on PASS. All values are integers in pixels."
+  (wgpu-render-pass-encoder-set-scissor-rect (handle pass) x y width height))
+
+(defun draw-indexed (pass index-count &key (instance-count 1) (first-index 0) (base-vertex 0))
+  "Issue an indexed draw call on PASS."
+  (wgpu-render-pass-encoder-draw-indexed
+   (handle pass) index-count instance-count first-index base-vertex 0))
+
 
 (defun make-depth-texture (device width height &key (format :depth24-plus))
   "Create a depth texture and a depth-only view of the given dimensions.

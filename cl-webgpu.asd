@@ -64,6 +64,18 @@
                  (:file "compiler")
                  (:file "api")))))
 
+(asdf:defsystem #:cl-webgpu/nuklear
+  :description "Nuklear immediate-mode GUI integration for cl-webgpu"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-webgpu #:cl-webgpu/wrapper #:cl-nuklear)
+  :components ((:module "nuklear"
+                :components
+                ((:file "package")
+                 (:file "backend")))))
+
 (asdf:defsystem #:cl-webgpu/codegen
   :description "Code generator for cl-webgpu CFFI bindings from C headers"
   :author "George Watson <gigolo@hotmail.co.uk>"
