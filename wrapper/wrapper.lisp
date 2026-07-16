@@ -447,8 +447,14 @@ Example:  :blend '() uses the defaults above (standard premultiplied alpha)"
           (unless (null-pointer-p p)
             (foreign-free p)))))))
 
-(defun configure-surface (surface device format width height)
-  "Configure SURFACE for rendering. Call once after device creation."
+(defun configure-surface (surface device format width height &key (present-mode 1))
+  "Configure SURFACE for rendering. Call once after device creation.
+
+   PRESENT-MODE is a raw WGPUPresentMode value (default 1, i.e. FIFO/vsync).
+   Common values: 1 = Fifo (vsync on, guaranteed supported), 3 = Immediate
+   (vsync off, tearing possible). Not every backend supports every mode --
+   query WGPU-SURFACE-GET-CAPABILITIES if you need to verify support before
+   configuring."
   (with-wgpu-struct (cfg '(:struct wgpu-surface-configuration))
     (setf (foreign-slot-value cfg '(:struct wgpu-surface-configuration) 'next-in-chain) (null-pointer)
           (foreign-slot-value cfg '(:struct wgpu-surface-configuration) 'device) (handle device)
@@ -460,7 +466,7 @@ Example:  :blend '() uses the defaults above (standard premultiplied alpha)"
           (foreign-slot-value cfg '(:struct wgpu-surface-configuration) 'view-format-count) 0
           (foreign-slot-value cfg '(:struct wgpu-surface-configuration) 'view-formats) (null-pointer)
           (foreign-slot-value cfg '(:struct wgpu-surface-configuration) 'alpha-mode) 1 ; Opaque
-          (foreign-slot-value cfg '(:struct wgpu-surface-configuration) 'present-mode) 1) ; FIFO
+          (foreign-slot-value cfg '(:struct wgpu-surface-configuration) 'present-mode) present-mode)
     (wgpu-surface-configure (handle surface) cfg)))
 
 (defun make-command-encoder (device &key label)
