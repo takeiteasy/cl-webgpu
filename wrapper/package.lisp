@@ -163,12 +163,19 @@
    #:write-texture
    ;; sampler helper
    #:make-sampler
+   ;; buffer usage constants (for MAKE-BUFFER's :USAGE)
+   #:+wgpu-buffer-usage-vertex+
+   #:+wgpu-buffer-usage-index+
+   #:+wgpu-buffer-usage-uniform+
+   #:+wgpu-buffer-usage-copy-dst+
    ;; bind-group helpers
    #:get-pipeline-bind-group-layout
    #:make-bind-group
    ;; render-pass draw helpers
+   #:set-pipeline
    #:set-vertex-buffer
    #:set-index-buffer
    #:set-bind-group
    #:set-scissor-rect
+   #:draw
    #:draw-indexed))

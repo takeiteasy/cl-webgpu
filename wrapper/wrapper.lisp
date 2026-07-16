@@ -268,10 +268,16 @@ All returned pointers must be freed by the caller after pipeline creation."
                                          fragment-entry-point
                                          surface-format
                                          vertex-buffer-layouts
+                                         (topology :triangle-list)
                                          depth-stencil-state
                                          blend
                                          label)
   "Build a render pipeline. Returns GPU-RENDER-PIPELINE.
+
+TOPOLOGY selects the primitive assembly mode (default :TRIANGLE-LIST): one of
+:point-list, :line-list, :line-strip, :triangle-list, :triangle-strip. Use
+:line-list to draw wireframe/outline geometry — 2 vertices per drawn edge,
+no index buffer required.
 
 ENTRY-POINT (default \"main\") is the shared fallback for both shader stages.
 VERTEX-ENTRY-POINT and FRAGMENT-ENTRY-POINT override the entry-point name for
@@ -348,7 +354,7 @@ Example:  :blend '() uses the defaults above (standard premultiplied alpha)"
           ;; primitive state
           (let ((p (foreign-slot-pointer desc '(:struct wgpu-render-pipeline-descriptor) 'primitive)))
             (setf (foreign-slot-value p '(:struct wgpu-primitive-state) 'next-in-chain) (null-pointer)
-                  (foreign-slot-value p '(:struct wgpu-primitive-state) 'topology) :triangle-list
+                  (foreign-slot-value p '(:struct wgpu-primitive-state) 'topology) topology
                   (foreign-slot-value p '(:struct wgpu-primitive-state) 'strip-index-format) :undefined
                   (foreign-slot-value p '(:struct wgpu-primitive-state) 'front-face) :ccw
                   (foreign-slot-value p '(:struct wgpu-primitive-state) 'cull-mode) :none
@@ -825,6 +831,16 @@ ENTRIES is a list of plists, each with:
   "Issue an indexed draw call on PASS."
   (wgpu-render-pass-encoder-draw-indexed
    (handle pass) index-count instance-count first-index base-vertex 0))
+
+(defun draw (pass vertex-count &key (instance-count 1) (first-vertex 0) (first-instance 0))
+  "Issue a non-indexed draw call on PASS -- e.g. for :LINE-LIST topology
+(see MAKE-RENDER-PIPELINE's :TOPOLOGY), which doesn't need an index buffer."
+  (wgpu-render-pass-encoder-draw
+   (handle pass) vertex-count instance-count first-vertex first-instance))
+
+(defun set-pipeline (pass pipeline)
+  "Bind PIPELINE (a GPU-RENDER-PIPELINE) as PASS's active render pipeline."
+  (wgpu-render-pass-encoder-set-pipeline (handle pass) (handle pipeline)))
 
 
 (defun make-depth-texture (device width height &key (format :depth24-plus))
