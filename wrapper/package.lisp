@@ -18,7 +18,7 @@
    #:wgpu-command-encoder-descriptor #:wgpu-render-pass-descriptor
    #:wgpu-render-pass-color-attachment #:wgpu-color
    #:wgpu-command-buffer-descriptor #:wgpu-texture-view-descriptor
-   #:wgpu-surface-texture
+   #:wgpu-surface-texture #:status
    ;; buffer + bind-group types
    #:wgpu-buffer-descriptor
    #:wgpu-bind-group-descriptor #:wgpu-bind-group-entry
@@ -151,6 +151,9 @@
    #:make-command-encoder
    #:begin-render-pass
    #:end-and-submit
+   #:submit-commands
+   #:acquire-frame-texture-view
+   #:present-frame
    #:make-depth-texture
    ;; buffer helpers
    #:make-buffer

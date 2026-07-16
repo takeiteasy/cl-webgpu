@@ -60,7 +60,9 @@ The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), whi
 |---|---|
 | `cl-webgpu` | Auto-generated FFI bindings (types, enums, functions) |
 | `cl-webgpu/glfw` | GLFW surface creation helper |
+| `cl-webgpu/glfw-dummy` | Headless drop-in for `cl-webgpu/glfw`'s window/loop calls — no window, no display server |
 | `cl-webgpu/wrapper` | CLOS wrapper layer — easy-to-use API |
+| `cl-webgpu/headless` | Offscreen render target + PNG readback, for testing without a display (requires `zpng`) |
 | `cl-webgpu/shader` | WGSL shader DSL |
 | `cl-webgpu/nuklear` | Nuklear immediate-mode GUI backend (requires `cl-nuklear`) |
 | `cl-webgpu/codegen` | Re-generates `cl-webgpu` bindings from C headers |
@@ -196,6 +198,7 @@ in `deps/webgpu/`. After updating headers:
 - [webgpu-headers](https://github.com/webgpu-native/webgpu-headers) [BSD-3-Clause](https://github.com/webgpu-native/webgpu-headers/blob/master/LICENSE)
 - [glfw3webgpu](https://github.com/eliemichel/glfw3webgpu) [MIT](https://github.com/eliemichel/glfw3webgpu/blob/master/LICENSE.txt)
 - [glfw3](https://github.com/glfw/glfw) [ZLIB](https://github.com/glfw/glfw/blob/master/LICENSE)
-- Dependencies: [cl-glfw3](https://github.com/AlexCharlton/cl-glfw3) (for `cl-webgpu/glfw`), cffi, bordeaux-threads, alexandria, cl-ppcre, uiop
+- [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) [MIT](https://github.com/Immediate-Mode-UI/Nuklear/blob/master/LICENSE) (via [cl-nuklear](https://github.com/takeiteasy/cl-nuklear), for `cl-webgpu/nuklear`)
+- Dependencies: [cl-glfw3](https://github.com/AlexCharlton/cl-glfw3) (for `cl-webgpu/glfw`), [zpng](https://github.com/xach/zpng) (for `cl-webgpu/headless`), cffi, bordeaux-threads, alexandria, cl-ppcre, uiop
 
 [MIT](LICENSE)

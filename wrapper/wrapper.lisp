@@ -541,9 +541,14 @@ Stencil operations are left undefined (no stencil)."
       (foreign-free att)
       (when depth-att (foreign-free depth-att)))))
 
-(defun end-and-submit (encoder pass queue surface)
-  "End PASS, finish ENCODER, submit to QUEUE, and present SURFACE.
-Releases the command buffer; does not release ENCODER, PASS, QUEUE, or SURFACE."
+(defun submit-commands (encoder pass queue)
+  "End PASS, finish ENCODER, and submit to QUEUE. Does not present.
+Releases the command buffer; does not release ENCODER, PASS, or QUEUE.
+
+Use this (instead of END-AND-SUBMIT) together with PRESENT-FRAME when the
+render target may not be a real surface -- e.g. a headless GPU-OFFSCREEN-TARGET
+from cl-webgpu/headless, where presenting means something other than
+WGPU-SURFACE-PRESENT."
   (wgpu-render-pass-encoder-end (handle pass))
   (with-wgpu-struct (cmd-desc '(:struct wgpu-command-buffer-descriptor))
     (setf (foreign-slot-value cmd-desc '(:struct wgpu-command-buffer-descriptor) 'next-in-chain)
@@ -553,8 +558,52 @@ Releases the command buffer; does not release ENCODER, PASS, QUEUE, or SURFACE."
       (with-foreign-object (bufs 'wgpu-command-buffer 1)
         (setf (mem-aref bufs 'wgpu-command-buffer 0) cmd-buf)
         (wgpu-queue-submit (handle queue) 1 bufs))
-      (wgpu-command-buffer-release cmd-buf)))
+      (wgpu-command-buffer-release cmd-buf))))
+
+(defun end-and-submit (encoder pass queue surface)
+  "End PASS, finish ENCODER, submit to QUEUE, and present SURFACE.
+Releases the command buffer; does not release ENCODER, PASS, QUEUE, or SURFACE."
+  (submit-commands encoder pass queue)
   (wgpu-surface-present (handle surface)))
+
+;;;; -------------------------------------------------------------------------
+;;;; Render-target seam
+;;;;
+;;;; ACQUIRE-FRAME-TEXTURE-VIEW / PRESENT-FRAME let render code stay agnostic
+;;;; to whether it's drawing into a real on-screen surface or an offscreen
+;;;; target (see cl-webgpu/headless). Write render loops against these two
+;;;; generics plus SUBMIT-COMMANDS instead of calling WGPU-SURFACE-* directly,
+;;;; and the same loop works headless for free.
+;;;; -------------------------------------------------------------------------
+
+(defgeneric acquire-frame-texture-view (target)
+  (:documentation
+   "Acquire a GPU-TEXTURE-VIEW for TARGET's current frame, or NIL if no frame
+is available this call (e.g. a surface texture that came back suboptimal --
+callers should skip rendering and try again next iteration). The caller is
+responsible for RELEASE-ing the returned view once the frame's render pass
+has been submitted."))
+
+(defgeneric present-frame (target)
+  (:documentation
+   "Present/finalize the frame previously acquired from TARGET via
+ACQUIRE-FRAME-TEXTURE-VIEW. For a real surface this presents to the screen;
+offscreen targets may no-op here and expose readback separately."))
+
+(defmethod acquire-frame-texture-view ((target gpu-surface))
+  (with-wgpu-struct (st '(:struct wgpu-surface-texture))
+    (wgpu-surface-get-current-texture (handle target) st)
+    (let ((tex    (foreign-slot-value st '(:struct wgpu-surface-texture) 'texture))
+          (status (mem-ref (foreign-slot-pointer st '(:struct wgpu-surface-texture) 'status) :uint32)))
+      (when (and (not (null-pointer-p tex))
+                 (or (= status 1) (= status 2))) ; success-optimal / success-suboptimal
+        (with-wgpu-struct (vdesc '(:struct wgpu-texture-view-descriptor))
+          (setf (foreign-slot-value vdesc '(:struct wgpu-texture-view-descriptor) 'mip-level-count) #xFFFFFFFF
+                (foreign-slot-value vdesc '(:struct wgpu-texture-view-descriptor) 'array-layer-count) #xFFFFFFFF)
+          (make-instance 'gpu-texture-view :handle (wgpu-texture-create-view tex vdesc)))))))
+
+(defmethod present-frame ((target gpu-surface))
+  (wgpu-surface-present (handle target)))
 
 ;;;; -------------------------------------------------------------------------
 ;;;; Buffer helpers
