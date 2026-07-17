@@ -76,7 +76,14 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 ;;; Renderer struct (a simple plist-based handle)
 ;;; ---------------------------------------------------------------------------
 
-(defstruct nuklear-renderer
+;;; :CONSTRUCTOR is renamed to avoid colliding with the MAKE-NUKLEAR-RENDERER
+;;; defun below (the public constructor, which builds the GPU resources and
+;;; then calls %MAKE-NUKLEAR-RENDERER to assemble the struct). Without this,
+;;; DEFSTRUCT's default MAKE-NUKLEAR-RENDERER constructor is clobbered by the
+;;; later DEFUN of the same name, so the DEFUN's own call to
+;;; "(make-nuklear-renderer :pipeline ...)" recurses into itself with keyword
+;;; args instead of reaching the struct constructor.
+(defstruct (nuklear-renderer (:constructor %make-nuklear-renderer))
   pipeline
   vertex-buffer
   index-buffer
@@ -208,7 +215,7 @@ Call FREE-NUKLEAR-RENDERER when done."
               ;; 7. Upload initial projection matrix
               (%upload-proj queue proj-buf width height)
               (cl-webgpu/wrapper:release shader)
-              (make-nuklear-renderer
+              (%make-nuklear-renderer
                :pipeline        pipeline
                :vertex-buffer   vtx-buf
                :index-buffer    idx-buf

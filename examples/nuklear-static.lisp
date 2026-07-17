@@ -31,37 +31,59 @@
     (load-glfw-library :path shim)))
 
 (defun render-frame (device surface pipeline queue renderer ctx)
-  (cffi:with-foreign-object (st '(:struct cl-webgpu:wgpu-surface-texture))
-    (cl-webgpu:wgpu-surface-get-current-texture (handle surface) st)
-    (let ((tex    (cffi:foreign-slot-value st '(:struct cl-webgpu:wgpu-surface-texture) 'cl-webgpu:texture))
-          (status (cffi:mem-ref (cffi:foreign-slot-pointer st '(:struct cl-webgpu:wgpu-surface-texture)
-                                                           'cl-webgpu:status) :uint32)))
-      (when (and (not (cffi:null-pointer-p tex)) (or (= status 1) (= status 2)))
-        (with-wgpu-struct (vdesc '(:struct cl-webgpu:wgpu-texture-view-descriptor))
-          (let ((view (cl-webgpu:wgpu-texture-create-view tex vdesc)))
-            (unwind-protect
-                (with-gpu-command-encoder (encoder device)
-                  (with-render-pass (pass encoder view :clear-r 0.2d0 :clear-g 0.2d0 :clear-b 0.2d0)
-                    ;; Build synthetic UI (no input — just static geometry)
-                    (nuklear::nk-begin ctx "Demo"
-                                       (cffi:with-foreign-object (r '(:struct nuklear::nk-rect))
-                                         (setf (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::x) 50.0
-                                               (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::y) 50.0
-                                               (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::w) 200.0
-                                               (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::h) 150.0)
-                                         r)
-                                       (logior 1 2 64)) ; border + movable + title
-                    (cffi:with-foreign-string (s "Hello from cl-webgpu/nuklear!")
-                      (nuklear::nk-label ctx s :nk-text-left))
-                    (nuklear::nk-button-label ctx "Click me")
-                    (nuklear::nk-end ctx)
-                    ;; Render to the pass
-                    (cl-webgpu/nuklear:render-nuklear renderer ctx pass *width* *height*
-                                                      (make-instance 'gpu-queue :handle
-                                                                     (cl-webgpu:wgpu-device-get-queue (handle device)))))
-                  (let ((q (make-instance 'gpu-queue :handle (cl-webgpu:wgpu-device-get-queue (handle device)))))
-                    (end-and-submit encoder pass q surface)))
-              (cl-webgpu:wgpu-texture-view-release view))))))))
+  ;; Use the wrapper's own ACQUIRE-FRAME-TEXTURE-VIEW (wrapper/wrapper.lisp)
+  ;; rather than hand-rolling WGPU-TEXTURE-CREATE-VIEW here: the latter, called
+  ;; with a zero-initialized WGPU-TEXTURE-VIEW-DESCRIPTOR, leaves MIP-LEVEL-COUNT
+  ;; and ARRAY-LAYER-COUNT at 0, which wgpu-native rejects ("invalid
+  ;; mipLevelCount") -- ACQUIRE-FRAME-TEXTURE-VIEW already sets both to the
+  ;; #xFFFFFFFF "all" sentinel, matching every other call site in the wrapper.
+  (let ((view (acquire-frame-texture-view surface)))
+    (when view
+      (unwind-protect
+          (with-gpu-command-encoder (encoder device)
+            (with-render-pass (pass encoder view :clear-r 0.2d0 :clear-g 0.2d0 :clear-b 0.2d0)
+              ;; Build synthetic UI (no input — just static geometry).
+              ;; NK-BEGIN and NK-BUTTON-LABEL's title/name params are typed
+              ;; :POINTER (raw C strings, not CFFI :STRING) -- Lisp strings
+              ;; must go through WITH-FOREIGN-STRING first, as NK-LABEL already does.
+              (cffi:with-foreign-string (title "Demo")
+                (nuklear::nk-begin ctx title
+                                   (cffi:with-foreign-object (r '(:struct nuklear::nk-rect))
+                                     (setf (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::x) 50.0
+                                           (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::y) 50.0
+                                           (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::w) 200.0
+                                           (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::h) 150.0)
+                                     r)
+                                   (logior 1 2 64))) ; border + movable + title
+              ;; Nuklear requires a layout row to be established before adding
+              ;; any widget to a window body -- without this, NK-LABEL and
+              ;; NK-BUTTON-LABEL below get a degenerate zero-size layout and
+              ;; draw nothing.
+              (nuklear::nk-layout-row-dynamic ctx 30.0 1)
+              ;; NK-LABEL's ALIGN param is a raw :UNSIGNED-INT bitmask, not the
+              ;; NK-TEXT-ALIGNMENT enum type, so the :NK-TEXT-LEFT keyword needs
+              ;; an explicit enum->integer lookup rather than relying on CFFI to
+              ;; coerce it (it only does that for arguments typed as the enum).
+              (cffi:with-foreign-string (s "Hello from cl-webgpu/nuklear!")
+                (nuklear::nk-label ctx s (cffi:foreign-enum-value 'nuklear::nk-text-alignment :nk-text-left)))
+              (nuklear::nk-layout-row-dynamic ctx 30.0 1)
+              (cffi:with-foreign-string (btn "Click me")
+                (nuklear::nk-button-label ctx btn))
+              (nuklear::nk-end ctx)
+              ;; Render to the pass
+              (cl-webgpu/nuklear:render-nuklear renderer ctx pass *width* *height*
+                                                (make-instance 'gpu-queue :handle
+                                                               (cl-webgpu:wgpu-device-get-queue (handle device))))
+              ;; END-AND-SUBMIT must run here, inside WITH-RENDER-PASS's body: it
+              ;; calls WGPU-RENDER-PASS-ENCODER-END on PASS, and PASS only stays
+              ;; bound (and un-released) for the dynamic extent of this body --
+              ;; WITH-RENDER-PASS releases it on the way out. Calling it after
+              ;; WITH-RENDER-PASS returns, as this example previously did, left
+              ;; PASS unbound (a compiler warning that was going unheeded) and
+              ;; would in any case have raced WITH-RENDER-PASS's own release.
+              (let ((q (make-instance 'gpu-queue :handle (cl-webgpu:wgpu-device-get-queue (handle device)))))
+                (end-and-submit encoder pass q surface))))
+        (release view)))))
 
 (defun run ()
   (load-libraries)
@@ -81,10 +103,14 @@
                 (unwind-protect
                     (progn
                       (configure-surface surface device fmt *width* *height*)
-                      ;; Init nuklear context with default font atlas
-                      (cffi:with-foreign-objects ((ctx   '(:struct nuklear::nk-context))
-                                                  (atlas '(:struct nuklear::nk-font-atlas))
-                                                  (aw    :int) (ah :int))
+                      ;; Init nuklear context with default font atlas.
+                      ;; CTX is heap-allocated (not WITH-FOREIGN-OBJECTS) because
+                      ;; nk_context is ~18KB; SBCL's CFFI forces large stack-allocated
+                      ;; foreign objects onto the C stack, which segfaults at that size.
+                      (let ((ctx (cffi:foreign-alloc '(:struct nuklear::nk-context))))
+                       (unwind-protect
+                        (cffi:with-foreign-objects ((atlas '(:struct nuklear::nk-font-atlas))
+                                                    (aw    :int) (ah :int))
                         (nuklear::nk-font-atlas-init-default atlas)
                         (nuklear::nk-font-atlas-begin atlas)
                         (let* ((font   (nuklear::nk-font-atlas-add-default atlas 13.0 (cffi:null-pointer)))
@@ -110,7 +136,8 @@
                             (cl-webgpu/nuklear:free-nuklear-renderer renderer)
                             (nuklear::nk-free ctx)
                             (nuklear::nk-font-atlas-clear atlas)
-                            (release queue)))))
+                            (release queue))))
+                        (cffi:foreign-free ctx))))
                   (release surface))))))
       (destroy-window window)
       (terminate)
