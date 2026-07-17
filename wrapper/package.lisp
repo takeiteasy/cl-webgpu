@@ -65,6 +65,7 @@
    #:wgpu-render-pass-encoder-set-index-buffer
    #:wgpu-render-pass-encoder-set-bind-group
    #:wgpu-render-pass-encoder-set-scissor-rect
+   #:wgpu-render-pass-encoder-set-viewport
    #:wgpu-render-pass-encoder-draw-indexed
    ;; struct types for vertex buffer layout support
    #:wgpu-vertex-buffer-layout #:wgpu-vertex-attribute
@@ -177,5 +178,6 @@
    #:set-index-buffer
    #:set-bind-group
    #:set-scissor-rect
+   #:set-viewport
    #:draw
    #:draw-indexed))

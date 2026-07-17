@@ -827,6 +827,14 @@ ENTRIES is a list of plists, each with:
   "Set the scissor rect on PASS. All values are integers in pixels."
   (wgpu-render-pass-encoder-set-scissor-rect (handle pass) x y width height))
 
+(defun set-viewport (pass x y width height &key (min-depth 0.0) (max-depth 1.0))
+  "Set the viewport on PASS. X/Y/WIDTH/HEIGHT are floats in pixels -- unlike
+SET-SCISSOR-RECT, the viewport also rescales clip-space, so it (not scissor)
+is what's needed to letterbox a non-square render target."
+  (wgpu-render-pass-encoder-set-viewport
+   (handle pass) (float x 1.0) (float y 1.0) (float width 1.0) (float height 1.0)
+   (float min-depth 1.0) (float max-depth 1.0)))
+
 (defun draw-indexed (pass index-count &key (instance-count 1) (first-index 0) (base-vertex 0))
   "Issue an indexed draw call on PASS."
   (wgpu-render-pass-encoder-draw-indexed
