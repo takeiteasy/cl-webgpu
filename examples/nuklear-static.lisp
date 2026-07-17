@@ -15,13 +15,24 @@
                 #:initialize #:terminate
                 #:create-window #:destroy-window
                 #:poll-events #:window-should-close-p
+                #:get-framebuffer-size
                 #:glfw-create-window-wgpu-surface
                 #:load-glfw-library))
 
 (in-package #:nuklear-static-example)
 
-(defparameter *width*  640)
-(defparameter *height* 480)
+;; WINDOW-WIDTH/HEIGHT are in GLFW "points" (what CREATE-WINDOW takes). On a
+;; Retina display the framebuffer is a 2x-denser pixel grid than the window's
+;; point size -- *WIDTH*/*HEIGHT* below are set from GET-FRAMEBUFFER-SIZE once
+;; the window exists, and are what CONFIGURE-SURFACE, MAKE-NUKLEAR-RENDERER,
+;; and RENDER-NUKLEAR must use. Configuring the surface / nuklear projection
+;; at the point size instead renders into a quarter of the actual framebuffer,
+;; which the compositor then upscales 2x -- soft edges on solid shapes, and
+;; small glyph text turns to mush.
+(defparameter *window-width*  640)
+(defparameter *window-height* 480)
+(defvar *width*)
+(defvar *height*)
 
 (defun load-libraries ()
   (let* ((base  (asdf:system-source-directory :cl-webgpu))
@@ -89,10 +100,12 @@
   (load-libraries)
   #+sbcl (sb-int:set-floating-point-modes :traps nil)
   (cl-glfw3:initialize)
-  (let ((window (cl-glfw3:create-window :width *width* :height *height*
+  (let ((window (cl-glfw3:create-window :width *window-width* :height *window-height*
                                         :title "Nuklear Static Demo"
                                         :client-api :no-api
                                         :resizable nil)))
+    (destructuring-bind (fb-width fb-height) (get-framebuffer-size window)
+      (setf *width* fb-width *height* fb-height))
     (unwind-protect
         (with-gpu-instance (inst)
           (with-gpu-adapter (adapter inst)
