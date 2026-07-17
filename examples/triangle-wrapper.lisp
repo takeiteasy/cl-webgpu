@@ -88,6 +88,14 @@
                    :uint32)))
       (when (and (not (cffi:null-pointer-p tex))
                  (or (= status 1) (= status 2)))   ; success-optimal / success-suboptimal
+        ;; KNOWN BUG (unrelated to the vertex_index fix above): this
+        ;; zero-initializes the view descriptor, leaving mip-level-count at 0,
+        ;; which current wgpu-native rejects with a fatal panic ("invalid
+        ;; mipLevelCount") rather than a validation error. The real fix is to
+        ;; set mip-level-count/array-layer-count to the #xFFFFFFFF "all
+        ;; remaining" sentinel, as wrapper.lisp's acquire-frame-texture-view
+        ;; already does -- this example predates that helper and should be
+        ;; ported to use it. Filed as a follow-up (star tracker, PLANETS label).
         (with-wgpu-struct (vdesc '(:struct cl-webgpu:wgpu-texture-view-descriptor))
           (let ((view (cl-webgpu:wgpu-texture-create-view tex vdesc)))
             (unwind-protect
@@ -133,6 +141,8 @@
                         (with-gpu-render-pipeline (pipeline device
                                                    :vertex-module shader
                                                    :fragment-module shader
+                                                   :vertex-entry-point "vs_main"
+                                                   :fragment-entry-point "fs_main"
                                                    :surface-format fmt
                                                    :label "Triangle pipeline")
                           (format t "Rendering — close window to exit~%")

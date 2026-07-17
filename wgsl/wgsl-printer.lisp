@@ -659,10 +659,21 @@ Returns (values has-struct-io return-struct-type arg-struct-types)."
                     (loop for (b . bt) in non-struct-params
                           for builtin in stage-builtins
                           when builtin
+                            ;; vertex_index/instance_index/sample_index are
+                            ;; unconditionally u32 in WGSL regardless of how
+                            ;; the user declared the Lisp parameter -- using
+                            ;; the declared type here (e.g. :int -> i32) is
+                            ;; rejected by wgpu-native with a fatal panic,
+                            ;; not just a validation error.
                             collect (format nil "@builtin(~a) ~a: ~a"
                                             builtin
                                             (translate-name b)
-                                            (wgsl-translate-type bt)))))
+                                            (if (member builtin '("vertex_index"
+                                                                   "instance_index"
+                                                                   "sample_index")
+                                                        :test #'string=)
+                                                "u32"
+                                                (wgsl-translate-type bt))))))
              (format stream "fn ~a(~{~a~^, ~}) -> ~a {~%"
                      entry-name
                      (append builtin-param-strs
