@@ -1,8 +1,10 @@
 ;;;; examples/nuklear-static.lisp
-;;;; Nuklear GUI rendered via cl-webgpu/nuklear — static demo (no input handling).
-;;;; Displays a panel with a label and a button using fixed synthetic state.
+;;;; Nuklear GUI rendered via cl-webgpu/nuklear — interactive demo.
+;;;; Displays a panel with a label, a live slider, and a button, driven by
+;;;; real GLFW mouse/keyboard input via cl-webgpu/nuklear-glfw-glue (weasel #70).
 
-(ql:quickload '(:cl-webgpu :cl-webgpu/wrapper :cl-webgpu/glfw :cl-webgpu/nuklear))
+(ql:quickload '(:cl-webgpu :cl-webgpu/wrapper :cl-webgpu/glfw :cl-webgpu/nuklear
+                 :cl-webgpu/nuklear-glfw-glue))
 
 ;; ============================================================================
 ;; Application package
@@ -17,7 +19,10 @@
                 #:poll-events #:window-should-close-p
                 #:get-framebuffer-size
                 #:glfw-create-window-wgpu-surface
-                #:load-glfw-library))
+                #:load-glfw-library)
+  (:import-from #:cl-webgpu/nuklear-glfw-glue
+                #:install-input-callbacks
+                #:nuklear-new-frame))
 
 (in-package #:nuklear-static-example)
 
@@ -33,6 +38,18 @@
 (defparameter *window-height* 480)
 (defvar *width*)
 (defvar *height*)
+(defvar *slider-value* 0.5)
+
+;; RENDER-NUKLEAR's projection is in framebuffer pixels, and nuklear treats
+;; every widget-geometry number (panel rect, row heights, font size) as a
+;; literal count of those pixels -- it has no separate "point"/"logical" unit.
+;; On a 2x Retina display that makes a panel written as if 200x180 "pixels"
+;; only 100x90 *points* wide on screen -- half the size a sighted person would
+;; expect, with a proportionally tiny hit-box on every widget. *UI-SCALE*
+;; (framebuffer pixels per point) corrects for this: multiply every layout
+;; constant and the baked font size by it so the UI reads as a normal size
+;; regardless of display density.
+(defvar *ui-scale* 1.0)
 
 (defun load-libraries ()
   (let* ((base  (asdf:system-source-directory :cl-webgpu))
@@ -60,26 +77,34 @@
               (cffi:with-foreign-string (title "Demo")
                 (nuklear::nk-begin ctx title
                                    (cffi:with-foreign-object (r '(:struct nuklear::nk-rect))
-                                     (setf (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::x) 50.0
-                                           (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::y) 50.0
-                                           (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::w) 200.0
-                                           (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::h) 150.0)
+                                     (setf (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::x) (* 50.0 *ui-scale*)
+                                           (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::y) (* 50.0 *ui-scale*)
+                                           (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::w) (* 200.0 *ui-scale*)
+                                           (cffi:foreign-slot-value r '(:struct nuklear::nk-rect) 'nuklear::h) (* 180.0 *ui-scale*))
                                      r)
                                    (logior 1 2 64))) ; border + movable + title
               ;; Nuklear requires a layout row to be established before adding
               ;; any widget to a window body -- without this, NK-LABEL and
               ;; NK-BUTTON-LABEL below get a degenerate zero-size layout and
               ;; draw nothing.
-              (nuklear::nk-layout-row-dynamic ctx 30.0 1)
+              (nuklear::nk-layout-row-dynamic ctx (* 30.0 *ui-scale*) 1)
               ;; NK-LABEL's ALIGN param is a raw :UNSIGNED-INT bitmask, not the
               ;; NK-TEXT-ALIGNMENT enum type, so the :NK-TEXT-LEFT keyword needs
               ;; an explicit enum->integer lookup rather than relying on CFFI to
               ;; coerce it (it only does that for arguments typed as the enum).
               (cffi:with-foreign-string (s "Hello from cl-webgpu/nuklear!")
                 (nuklear::nk-label ctx s (cffi:foreign-enum-value 'nuklear::nk-text-alignment :nk-text-left)))
-              (nuklear::nk-layout-row-dynamic ctx 30.0 1)
+              (nuklear::nk-layout-row-dynamic ctx (* 30.0 *ui-scale*) 1)
+              ;; Live slider proving real input (weasel #70): drag it and
+              ;; *SLIDER-VALUE* changes.
+              (cffi:with-foreign-object (v :float)
+                (setf (cffi:mem-ref v :float) (float *slider-value* 1.0))
+                (nuklear::nk-slider-float ctx 0.0 v 1.0 0.01)
+                (setf *slider-value* (cffi:mem-ref v :float)))
+              (nuklear::nk-layout-row-dynamic ctx (* 30.0 *ui-scale*) 1)
               (cffi:with-foreign-string (btn "Click me")
-                (nuklear::nk-button-label ctx btn))
+                (when (plusp (nuklear::nk-button-label ctx btn))
+                  (format t "Button clicked! slider = ~,2F~%" *slider-value*)))
               (nuklear::nk-end ctx)
               ;; Render to the pass
               (cl-webgpu/nuklear:render-nuklear renderer ctx pass *width* *height*
@@ -105,7 +130,8 @@
                                         :client-api :no-api
                                         :resizable nil)))
     (destructuring-bind (fb-width fb-height) (get-framebuffer-size window)
-      (setf *width* fb-width *height* fb-height))
+      (setf *width* fb-width *height* fb-height)
+      (setf *ui-scale* (float (/ fb-width *window-width*) 1.0)))
     (unwind-protect
         (with-gpu-instance (inst)
           (with-gpu-adapter (adapter inst)
@@ -126,7 +152,7 @@
                                                     (aw    :int) (ah :int))
                         (nuklear::nk-font-atlas-init-default atlas)
                         (nuklear::nk-font-atlas-begin atlas)
-                        (let* ((font   (nuklear::nk-font-atlas-add-default atlas 13.0 (cffi:null-pointer)))
+                        (let* ((font   (nuklear::nk-font-atlas-add-default atlas (* 13.0 *ui-scale*) (cffi:null-pointer)))
                                (pixels (nuklear::nk-font-atlas-bake atlas aw ah :nk-font-atlas-rgba32))
                                (atlas-w (cffi:mem-ref aw :int))
                                (atlas-h (cffi:mem-ref ah :int))
@@ -139,11 +165,13 @@
                           ;; Init context with the baked font
                           (let ((handle-ptr (cffi:foreign-slot-pointer font '(:struct nuklear::nk-font) 'nuklear::handle)))
                             (nuklear::nk-init-default ctx handle-ptr))
+                          (install-input-callbacks window)
                           (unwind-protect
                               (progn
-                                (format t "Running nuklear-static demo — close window to exit~%")
+                                (format t "Running nuklear-static demo — drag the slider, close window to exit~%")
                                 (loop until (window-should-close-p window)
                                       do (poll-events)
+                                         (nuklear-new-frame ctx window)
                                          (render-frame device surface nil queue renderer ctx)
                                          (sleep 0.016)))
                             (cl-webgpu/nuklear:free-nuklear-renderer renderer)

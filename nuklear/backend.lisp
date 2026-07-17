@@ -245,6 +245,10 @@ CTX       — foreign nk_context pointer.
 PASS      — a GPU-RENDER-PASS.
 WIDTH/HEIGHT — framebuffer pixel dimensions (used for scissor clamping).
 QUEUE     — a GPU-QUEUE (needed for write-buffer uploads)."
+  ;; Re-upload the projection every frame from the caller's WIDTH/HEIGHT
+  ;; (cheap: 64 bytes) instead of relying on the one-time upload in
+  ;; MAKE-NUKLEAR-RENDERER, which goes stale as soon as the window resizes.
+  (%upload-proj queue (nuklear-renderer-proj-buffer renderer) width height)
   (let* ((vtx-nk   (nuklear-renderer-vtx-nk-buf renderer))
          (idx-nk   (nuklear-renderer-idx-nk-buf renderer))
          (cmds-nk  (nuklear-renderer-cmds-nk-buf renderer))

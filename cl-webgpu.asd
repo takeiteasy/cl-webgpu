@@ -100,6 +100,17 @@
                 ((:file "package")
                  (:file "backend")))))
 
+(asdf:defsystem #:cl-webgpu/nuklear-glfw-glue
+  :description "GLFW input wiring for cl-webgpu/nuklear (mouse/keyboard/scroll)"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-webgpu/nuklear #:cl-webgpu/glfw)
+  :components ((:module "nuklear"
+                :components
+                ((:file "glfw-input")))))
+
 (asdf:defsystem #:cl-webgpu/codegen
   :description "Code generator for cl-webgpu CFFI bindings from C headers"
   :author "George Watson <gigolo@hotmail.co.uk>"
