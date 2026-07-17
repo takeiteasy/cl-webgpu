@@ -270,7 +270,7 @@ All returned pointers must be freed by the caller after pipeline creation."
                                          vertex-buffer-layouts
                                          (topology :triangle-list)
                                          depth-stencil-state
-                                         blend
+                                         (blend nil blend-supplied-p)
                                          label)
   "Build a render pipeline. Returns GPU-RENDER-PIPELINE.
 
@@ -303,7 +303,13 @@ DEPTH-STENCIL-STATE is an optional plist enabling depth testing. Supported keys:
   :depth-compare        — depth comparison function (default :less)
 Stencil is disabled (stencil-write-mask 0, compare :always).
 
-BLEND is an optional plist enabling alpha blending on the colour target. Supported keys:
+BLEND, when SUPPLIED at all (including as NIL/'()), enables alpha blending on
+the colour target; omitting it entirely leaves blending off. This
+supplied-vs-omitted distinction (via an -P parameter, not a bare (IF BLEND
+...) on the value) is what lets :blend '() mean \"on, with the defaults
+below\" rather than being indistinguishable from omitting :blend -- see
+weasel #84, where the previous (IF BLEND ...) implementation made the two
+identical and left blending off either way. BLEND accepts a plist of:
   :color-src-factor     — (default :src-alpha)
   :color-dst-factor     — (default :one-minus-src-alpha)
   :color-operation      — (default :add)
@@ -311,15 +317,7 @@ BLEND is an optional plist enabling alpha blending on the colour target. Support
   :alpha-dst-factor     — (default :one-minus-src-alpha)
   :alpha-operation      — (default :add)
 
-Example:  :blend '() uses the defaults above (standard premultiplied alpha)
-
-KNOWN BUG (weasel #84): :blend '() is NIL in Lisp, and the implementation
-below branches on (if blend ...), so :blend '() is currently indistinguishable
-from omitting :blend and actually leaves blending OFF -- the opposite of what
-this docstring claims. Until fixed, pass the plist explicitly, e.g.
-  :blend (list :color-src-factor :src-alpha :color-dst-factor :one-minus-src-alpha
-               :color-operation :add :alpha-src-factor :one
-               :alpha-dst-factor :one-minus-src-alpha :alpha-operation :add)"
+Example:  :blend '() uses the defaults above (standard premultiplied alpha)"
   (let* ((vep      (or vertex-entry-point entry-point))
          (fep      (or fragment-entry-point entry-point))
          (desc         (foreign-alloc '(:struct wgpu-render-pipeline-descriptor)))
@@ -410,7 +408,7 @@ this docstring claims. Until fixed, pass the plist explicitly, e.g.
                 (or surface-format :bgra8-unorm)
                 (foreign-slot-value color-target '(:struct wgpu-color-target-state) 'write-mask)
                 #xF)
-          (if blend
+          (if blend-supplied-p
               (let ((bs (foreign-alloc '(:struct wgpu-blend-state))))
                 (push bs extra-frees)
                 (let ((color (foreign-slot-pointer bs '(:struct wgpu-blend-state) 'color))
