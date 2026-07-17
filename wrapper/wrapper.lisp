@@ -311,7 +311,15 @@ BLEND is an optional plist enabling alpha blending on the colour target. Support
   :alpha-dst-factor     — (default :one-minus-src-alpha)
   :alpha-operation      — (default :add)
 
-Example:  :blend '() uses the defaults above (standard premultiplied alpha)"
+Example:  :blend '() uses the defaults above (standard premultiplied alpha)
+
+KNOWN BUG (weasel #84): :blend '() is NIL in Lisp, and the implementation
+below branches on (if blend ...), so :blend '() is currently indistinguishable
+from omitting :blend and actually leaves blending OFF -- the opposite of what
+this docstring claims. Until fixed, pass the plist explicitly, e.g.
+  :blend (list :color-src-factor :src-alpha :color-dst-factor :one-minus-src-alpha
+               :color-operation :add :alpha-src-factor :one
+               :alpha-dst-factor :one-minus-src-alpha :alpha-operation :add)"
   (let* ((vep      (or vertex-entry-point entry-point))
          (fep      (or fragment-entry-point entry-point))
          (desc         (foreign-alloc '(:struct wgpu-render-pipeline-descriptor)))

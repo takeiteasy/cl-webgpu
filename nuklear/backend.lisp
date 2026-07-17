@@ -189,7 +189,18 @@ Call FREE-NUKLEAR-RENDERER when done."
                             :vertex-entry-point   "vs_main"
                             :fragment-entry-point "fs_main"
                             :surface-format  surface-format
-                            :blend '()         ; enable SRC_ALPHA / ONE_MINUS_SRC_ALPHA
+                            ;; NOTE: :blend '() reads as NIL, and MAKE-RENDER-PIPELINE
+                            ;; branches on (if blend ...), so it leaves blending OFF
+                            ;; (weasel #84) -- pass the standard premultiplied-alpha
+                            ;; defaults explicitly instead. Without this, every
+                            ;; partially-transparent glyph/coverage pixel renders fully
+                            ;; opaque, turning antialiased text into solid blobs.
+                            :blend (list :color-src-factor :src-alpha
+                                         :color-dst-factor :one-minus-src-alpha
+                                         :color-operation :add
+                                         :alpha-src-factor :one
+                                         :alpha-dst-factor :one-minus-src-alpha
+                                         :alpha-operation :add)
                             :vertex-buffer-layouts
                             (list (list :array-stride +vertex-stride+
                                         :step-mode :vertex
@@ -312,10 +323,10 @@ QUEUE     — a GPU-QUEUE (needed for write-buffer uploads)."
                          (let* ((cr   (cffi:foreign-slot-pointer
                                        cmd '(:struct nuklear::nk-draw-command)
                                        'nuklear::clip-rect))
-                                (cx   (max 0 (round (cffi:foreign-slot-value cr '(:struct nuklear::nk-rect) 'nuklear::x))))
-                                (cy   (max 0 (round (cffi:foreign-slot-value cr '(:struct nuklear::nk-rect) 'nuklear::y))))
-                                (cw   (min width  (round (cffi:foreign-slot-value cr '(:struct nuklear::nk-rect) 'nuklear::w))))
-                                (ch   (min height (round (cffi:foreign-slot-value cr '(:struct nuklear::nk-rect) 'nuklear::h)))))
+                                (cx   (min width  (max 0 (round (cffi:foreign-slot-value cr '(:struct nuklear::nk-rect) 'nuklear::x)))))
+                                (cy   (min height (max 0 (round (cffi:foreign-slot-value cr '(:struct nuklear::nk-rect) 'nuklear::y)))))
+                                (cw   (min (- width  cx) (round (cffi:foreign-slot-value cr '(:struct nuklear::nk-rect) 'nuklear::w))))
+                                (ch   (min (- height cy) (round (cffi:foreign-slot-value cr '(:struct nuklear::nk-rect) 'nuklear::h)))))
                            (cl-webgpu/wrapper:set-scissor-rect pass cx cy (max 0 cw) (max 0 ch)))
                          (cl-webgpu/wrapper:draw-indexed pass elem-count :first-index index-offset)
                          (incf index-offset elem-count)))))))))
