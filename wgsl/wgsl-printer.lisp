@@ -827,6 +827,16 @@ Enables multi-line formatting for long function calls (>= 4 args).")
                       (print-wgsl-expression b stage)
                       (%translate-name field)
                       (print-wgsl-top-expression value stage))))
+           ;; Handle swizzle-access binding (e.g. (setf (.x uv) ...)) --
+           ;; PRINT-WGSL-EXPRESSION already prints a SWIZZLE-ACCESS read
+           ;; correctly (recursing into its underlying binding), so reuse it
+           ;; for the write target instead of TRANSLATE-NAME, whose generic
+           ;; SWIZZLE-ACCESS method interpolates the raw Lisp object with ~a.
+           ((typep binding 'swizzle-access)
+            (format stream "~a~a = ~a;~%"
+                    indent-str
+                    (print-wgsl-expression binding stage)
+                    (print-wgsl-top-expression value stage)))
            ;; Handle output binding -> output.name
 
            ;; Handle any output binding -> output.name
@@ -1091,7 +1101,20 @@ nil, another if-form that is also fully inline, or an inline-able statement."
                        (setf (gethash b ht) t))
                       ;; Slot-access: walk deeper to find mutations
                       ((typep b 'slot-access)
-                       (walk-form b))))
+                       (walk-form b))
+                      ;; Swizzle-access (e.g. (setf (.x uv) ...)): the write
+                      ;; target is the vector variable underneath, not the
+                      ;; swizzle-access node itself -- unwrap directly rather
+                      ;; than recursing through WALK-FORM's SWIZZLE-ACCESS
+                      ;; arm, which bottoms out at a no-op VARIABLE-READ leaf
+                      ;; and would never mark anything mutable.
+                      ((typep b 'swizzle-access)
+                       (let ((inner (binding b)))
+                         (cond
+                           ((typep inner 'variable-read)
+                            (setf (gethash (binding inner) ht) t))
+                           ((typep inner 'binding)
+                            (setf (gethash inner ht) t)))))))
                   (walk-form (value form)))
                  (if-form
                   (walk-form (test-form form))
@@ -1421,8 +1444,15 @@ user-defined function calls which use trailing-comma style)."
                                  (wgsl-integer-suffix fname args))
                             (let ((wgsl-name (if is-type-ctor
                                                  (wgsl-type-name (intern (string-upcase sname) :keyword))
-                                                 (or (gethash fname *wgsl-function-map*)
-                                                     (translate-name f)))))
+                                                 ;; ATAN is DSL-overloaded (mirroring GLSL's
+                                                 ;; atan(y) / atan(y,x)) but WGSL has no 2-arg
+                                                 ;; atan -- its 2-arg builtin is separately
+                                                 ;; named atan2(y, x). Route by arity here
+                                                 ;; rather than adding a second DSL symbol.
+                                                 (if (and (eq fname 'atan) (= (length args) 2))
+                                                     "atan2"
+                                                     (or (gethash fname *wgsl-function-map*)
+                                                         (translate-name f))))))
                               (render-fn-call-wgsl
                                wgsl-name
                                (mapcar (lambda (a)

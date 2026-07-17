@@ -88,6 +88,21 @@
                  (:file "compiler")
                  (:file "api")))))
 
+(asdf:defsystem #:cl-webgpu/shader/tests
+  :description "Tests for cl-webgpu/shader (the WGSL DSL)"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :depends-on (#:cl-webgpu/shader #:fiveam)
+  :pathname "tests/"
+  :serial t
+  :components ((:file "package")
+               (:file "fixtures")
+               (:file "wgsl-tests"))
+  :perform (test-op (op c)
+             (unless (uiop:symbol-call :cl-webgpu/shader/tests :run-tests)
+               (error "cl-webgpu/shader/tests: one or more tests failed"))))
+
 (asdf:defsystem #:cl-webgpu/nuklear
   :description "Nuklear immediate-mode GUI integration for cl-webgpu"
   :author "George Watson <gigolo@hotmail.co.uk>"
