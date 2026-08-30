@@ -76,42 +76,22 @@
     (cl-webgpu:load-wgpu-libraries :wgpu-path wgpu :shim-path shim)
     (cl-webgpu/glfw:load-glfw-library :path shim)))
 
-(defun render-frame (device surface pipeline)
-  "Acquire the current surface texture, draw the triangle, and present."
-  (cffi:with-foreign-object (st '(:struct cl-webgpu:wgpu-surface-texture))
-    (cl-webgpu:wgpu-surface-get-current-texture (handle surface) st)
-    (let ((tex    (cffi:foreign-slot-value
-                   st '(:struct cl-webgpu:wgpu-surface-texture) 'cl-webgpu:texture))
-          (status (cffi:mem-ref
-                   (cffi:foreign-slot-pointer
-                    st '(:struct cl-webgpu:wgpu-surface-texture) 'cl-webgpu:status)
-                   :uint32)))
-      (when (and (not (cffi:null-pointer-p tex))
-                 (or (= status 1) (= status 2)))   ; success-optimal / success-suboptimal
-        ;; KNOWN BUG (unrelated to the vertex_index fix above): this
-        ;; zero-initializes the view descriptor, leaving mip-level-count at 0,
-        ;; which current wgpu-native rejects with a fatal panic ("invalid
-        ;; mipLevelCount") rather than a validation error. The real fix is to
-        ;; set mip-level-count/array-layer-count to the #xFFFFFFFF "all
-        ;; remaining" sentinel, as wrapper.lisp's acquire-frame-texture-view
-        ;; already does -- this example predates that helper and should be
-        ;; ported to use it. Filed as a follow-up (star tracker, PLANETS label).
-        (with-wgpu-struct (vdesc '(:struct cl-webgpu:wgpu-texture-view-descriptor))
-          (let ((view (cl-webgpu:wgpu-texture-create-view tex vdesc)))
-            (unwind-protect
-                (with-gpu-command-encoder (encoder device)
-                  (with-render-pass (pass encoder view
-                                    :clear-r 0.1d0 :clear-g 0.1d0 :clear-b 0.3d0)
-                    (cl-webgpu:wgpu-render-pass-encoder-set-pipeline
-                     (handle pass) (handle pipeline))
-                    (cl-webgpu:wgpu-render-pass-encoder-draw (handle pass) 3 1 0 0)
-                    (let ((queue (cl-webgpu:wgpu-device-get-queue (handle device))))
-                      (unwind-protect
-                          (end-and-submit encoder pass
-                                          (make-instance 'gpu-queue :handle queue)
-                                          surface)
-                        (cl-webgpu:wgpu-queue-release queue)))))
-              (cl-webgpu:wgpu-texture-view-release view))))))))
+(defun render-frame (device queue surface pipeline)
+  "Acquire the current surface texture, draw the triangle, and present.
+ACQUIRE-FRAME-TEXTURE-VIEW returns NIL when the surface has no frame ready
+this call (e.g. a suboptimal/outdated texture) -- callers just skip the frame
+and try again next iteration; a resizable window would also reconfigure the
+surface here (see cl-webgpu/wrapper:get-current-surface-texture for that)."
+  (let ((view (acquire-frame-texture-view surface)))
+    (when view
+      (unwind-protect
+          (with-gpu-command-encoder (encoder device)
+            (with-render-pass (pass encoder view
+                              :clear-r 0.1d0 :clear-g 0.1d0 :clear-b 0.3d0)
+              (set-pipeline pass pipeline)
+              (draw pass 3)
+              (end-and-submit encoder pass queue surface)))
+        (release view)))))
 
 ;; ============================================================================
 ;; Entry point
@@ -127,30 +107,28 @@
                                         :client-api :no-api
                                         :resizable nil)))
     (unwind-protect
-        (with-gpu-instance (inst)
-          (with-gpu-adapter (adapter inst)
-            (with-gpu-device (device inst adapter)
-              (let* ((raw-surface (cl-webgpu/glfw:glfw-create-window-wgpu-surface
-                                   (handle inst) window))
-                     (surface (make-instance 'gpu-surface :handle raw-surface))
-                     (fmt (get-surface-format surface adapter)))
-                (unwind-protect
-                    (progn
-                      (configure-surface surface device fmt 640 480)
-                      (with-gpu-shader-module (shader device *shader-source* :label "Triangle")
-                        (with-gpu-render-pipeline (pipeline device
-                                                   :vertex-module shader
-                                                   :fragment-module shader
-                                                   :vertex-entry-point "vs_main"
-                                                   :fragment-entry-point "fs_main"
-                                                   :surface-format fmt
-                                                   :label "Triangle pipeline")
-                          (format t "Rendering — close window to exit~%")
-                          (loop until (cl-glfw3:window-should-close-p window)
-                                do (cl-glfw3:poll-events)
-                                   (render-frame device surface pipeline)
-                                   (sleep 0.016)))))
-                  (release surface))))))
+        (with-gpu* ((inst    (make-gpu-instance))
+                    (adapter (request-gpu-adapter inst))
+                    (device  (request-gpu-device inst adapter))
+                    (queue   (get-device-queue device))
+                    (surface (make-instance 'gpu-surface
+                                            :handle (cl-webgpu/glfw:glfw-create-window-wgpu-surface
+                                                     (handle inst) window)))
+                    (shader  (make-shader-module device *shader-source* :label "Triangle")))
+          (let ((fmt (get-surface-format surface adapter)))
+            (configure-surface surface device fmt 640 480)
+            (with-gpu* ((pipeline (make-render-pipeline device
+                                   :vertex-module shader
+                                   :fragment-module shader
+                                   :vertex-entry-point "vs_main"
+                                   :fragment-entry-point "fs_main"
+                                   :surface-format fmt
+                                   :label "Triangle pipeline")))
+              (format t "Rendering — close window to exit~%")
+              (loop until (cl-glfw3:window-should-close-p window)
+                    do (cl-glfw3:poll-events)
+                       (render-frame device queue surface pipeline)
+                       (sleep 0.016)))))
       (cl-glfw3:destroy-window window)
       (cl-glfw3:terminate)
       (format t "Done.~%"))))

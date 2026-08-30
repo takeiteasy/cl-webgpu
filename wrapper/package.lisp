@@ -135,16 +135,18 @@
    #:gpu-instance #:gpu-adapter #:gpu-device #:gpu-surface
    #:gpu-shader-module #:gpu-render-pipeline #:gpu-command-encoder
    #:gpu-render-pass #:gpu-texture-view #:gpu-queue #:gpu-buffer #:gpu-texture
+   #:gpu-sampler #:gpu-bind-group #:gpu-bind-group-layout
    ;; scoped struct helper
    #:with-wgpu-struct
    ;; with-X macros
    #:with-gpu-instance #:with-gpu-adapter #:with-gpu-device
    #:with-gpu-shader-module #:with-gpu-render-pipeline
-   #:with-gpu-command-encoder #:with-render-pass
+   #:with-gpu-command-encoder #:with-render-pass #:with-gpu*
    ;; creation helpers
    #:make-gpu-instance
    #:request-gpu-adapter
    #:request-gpu-device
+   #:get-device-queue
    #:make-shader-module
    #:get-surface-format
    #:make-render-pipeline
@@ -155,9 +157,11 @@
    #:submit-commands
    #:acquire-frame-texture-view
    #:present-frame
+   #:get-current-surface-texture
    #:make-depth-texture
    ;; buffer helpers
    #:make-buffer
+   #:make-buffer-with-data
    #:write-buffer
    ;; texture helpers
    #:make-texture-2d

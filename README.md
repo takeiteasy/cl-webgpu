@@ -71,21 +71,31 @@ The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), whi
 
 The wrapper eliminates the `foreign-alloc` / `foreign-slot-value` boilerplate by providing:
 
-**CLOS handle classes** — each wraps a raw wgpu pointer and dispatches `release` to the correct `wgpu*Release` function:
+**CLOS handle classes** — each wraps a raw wgpu pointer and dispatches `release` to the correct `wgpu*Release` function. Every object a wrapper function returns is one of these — there's no raw-pointer escape hatch to remember to release by hand:
 
 ```
 gpu-instance  gpu-adapter  gpu-device   gpu-surface
 gpu-shader-module  gpu-render-pipeline  gpu-command-encoder
-gpu-render-pass  gpu-texture-view  gpu-queue  gpu-buffer
+gpu-render-pass  gpu-texture-view  gpu-queue  gpu-buffer  gpu-texture
+gpu-sampler  gpu-bind-group  gpu-bind-group-layout
 ```
 
-**`with-X` macros** — RAII-style resource scoping:
+**`with-gpu*`** — flat RAII scoping over any number of handles, without nesting a nine-deep nest of one-per-resource macros by hand. Bind `(var form)` for a single value or `((var1 var2) form)` for a form that returns multiple values (e.g. `make-texture-2d`); every bound variable is released in reverse order when the body exits, normally or via an error:
+
+```lisp
+(with-gpu* ((inst    (make-gpu-instance))
+            (adapter (request-gpu-adapter inst))
+            (device  (request-gpu-device inst adapter))
+            (queue   (get-device-queue device))
+            ((tex view) (make-texture-2d device 256 256)))
+  ...)   ; view, tex, queue, device, adapter, inst all released on exit
+```
+
+The original one-resource-per-macro forms (`with-gpu-instance`, `with-gpu-adapter`, `with-gpu-device`, `with-gpu-shader-module`, `with-gpu-render-pipeline`, `with-gpu-command-encoder`, `with-render-pass`) still exist for the single-resource case:
 
 ```lisp
 (with-gpu-instance (inst)
-  (with-gpu-adapter (adapter inst)
-    (with-gpu-device (device inst adapter)
-      ...)))   ; all handles released on exit, even on error
+  ...)   ; inst released on exit, even on error
 ```
 
 **`with-wgpu-struct`** — scoped zeroed foreign struct (no manual `foreign-alloc`/`foreign-free`):
@@ -102,6 +112,7 @@ gpu-render-pass  gpu-texture-view  gpu-queue  gpu-buffer
 (make-gpu-instance)
 (request-gpu-adapter instance &key power-preference backend)
 (request-gpu-device  instance adapter &key label)
+(get-device-queue    device)                        ; → gpu-queue
 (make-shader-module  device wgsl-source &key label)
 (get-surface-format  surface adapter)               ; → keyword e.g. :bgra8-unorm
 (make-render-pipeline device &key vertex-module fragment-module
@@ -110,6 +121,21 @@ gpu-render-pass  gpu-texture-view  gpu-queue  gpu-buffer
 (make-command-encoder device &key label)
 (begin-render-pass   encoder texture-view &key clear-r clear-g clear-b clear-a)
 (end-and-submit      encoder pass queue surface)
+
+;; buffers -- WRITE-BUFFER and MAKE-BUFFER-WITH-DATA take a Lisp vector
+;; directly (single-float, (unsigned-byte 32), or (unsigned-byte 8)) and
+;; do the foreign-alloc/copy/free internally; a foreign pointer + explicit
+;; SIZE still works for callers that already have one.
+(make-buffer device &key size usage mapped-at-creation label)   ; → gpu-buffer
+(make-buffer-with-data device queue data usage &key label)      ; create + upload in one call
+(write-buffer queue buffer offset data &optional size)
+
+;; textures, samplers, bind groups
+(make-texture-2d device width height &key format usage label)   ; → (values gpu-texture gpu-texture-view)
+(write-texture   queue texture data data-size &key width height bytes-per-row)  ; DATA: pointer or (unsigned-byte 8) vector
+(make-sampler    device &key mag-filter min-filter address-mode)     ; → gpu-sampler
+(get-pipeline-bind-group-layout pipeline group-index)                 ; → gpu-bind-group-layout
+(make-bind-group device layout entries)                               ; → gpu-bind-group
 ```
 
 See `examples/triangle-wrapper.lisp` for a complete example.

@@ -92,6 +92,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
   atlas-view
   sampler
   bind-group
+  bind-group-layout
   vertex-layout       ; foreign nk-draw-vertex-layout-element array (caller frees)
   vtx-nk-buf          ; foreign nk-buffer for vertices
   idx-nk-buf          ; foreign nk-buffer for indices
@@ -125,11 +126,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     m))
 
 (defun %upload-proj (queue proj-buffer width height)
-  (let ((m (%ortho-matrix width height)))
-    (cffi:with-foreign-object (data :float 16)
-      (loop for i from 0 below 16 do
-            (setf (cffi:mem-aref data :float i) (aref m i)))
-      (cl-webgpu/wrapper:write-buffer queue proj-buffer 0 data +proj-buf-size+))))
+  (cl-webgpu/wrapper:write-buffer queue proj-buffer 0 (%ortho-matrix width height)))
 
 ;;; ---------------------------------------------------------------------------
 ;;; make-nuklear-renderer
@@ -235,6 +232,7 @@ Call FREE-NUKLEAR-RENDERER when done."
                :atlas-view      atlas-view
                :sampler         smp
                :bind-group      bg
+               :bind-group-layout bg-layout
                :vertex-layout   layout
                :vtx-nk-buf      vtx-nk
                :idx-nk-buf      idx-nk
@@ -339,8 +337,9 @@ QUEUE     — a GPU-QUEUE (needed for write-buffer uploads)."
 
 (defun free-nuklear-renderer (renderer)
   "Release all GPU resources held by RENDERER."
-  (when (nuklear-renderer-bind-group   renderer) (cl-webgpu:wgpu-bind-group-release   (nuklear-renderer-bind-group   renderer)))
-  (when (nuklear-renderer-sampler      renderer) (cl-webgpu:wgpu-sampler-release      (nuklear-renderer-sampler      renderer)))
+  (when (nuklear-renderer-bind-group   renderer) (cl-webgpu/wrapper:release           (nuklear-renderer-bind-group   renderer)))
+  (when (nuklear-renderer-bind-group-layout renderer) (cl-webgpu/wrapper:release      (nuklear-renderer-bind-group-layout renderer)))
+  (when (nuklear-renderer-sampler      renderer) (cl-webgpu/wrapper:release           (nuklear-renderer-sampler      renderer)))
   (when (nuklear-renderer-atlas-view   renderer) (cl-webgpu/wrapper:release           (nuklear-renderer-atlas-view   renderer)))
   (when (nuklear-renderer-atlas-texture renderer) (cl-webgpu/wrapper:release          (nuklear-renderer-atlas-texture renderer)))
   (when (nuklear-renderer-proj-buffer  renderer) (cl-webgpu/wrapper:release           (nuklear-renderer-proj-buffer  renderer)))

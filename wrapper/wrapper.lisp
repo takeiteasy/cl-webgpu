@@ -34,6 +34,9 @@
 (defclass gpu-queue          (gpu-handle) ())
 (defclass gpu-buffer         (gpu-handle) ())
 (defclass gpu-texture        (gpu-handle) ())
+(defclass gpu-sampler        (gpu-handle) ())
+(defclass gpu-bind-group        (gpu-handle) ())
+(defclass gpu-bind-group-layout (gpu-handle) ())
 
 (defmethod release ((obj gpu-instance))        (wgpu-instance-release       (handle obj)))
 (defmethod release ((obj gpu-adapter))         (wgpu-adapter-release        (handle obj)))
@@ -53,6 +56,9 @@
 (defmethod release ((obj gpu-texture))
   (wgpu-texture-destroy (handle obj))
   (wgpu-texture-release (handle obj)))
+(defmethod release ((obj gpu-sampler))           (wgpu-sampler-release           (handle obj)))
+(defmethod release ((obj gpu-bind-group))        (wgpu-bind-group-release        (handle obj)))
+(defmethod release ((obj gpu-bind-group-layout)) (wgpu-bind-group-layout-release (handle obj)))
 
 
 ;;;; -------------------------------------------------------------------------
@@ -118,6 +124,29 @@
      (unwind-protect (progn ,@body)
        (release ,var))))
 
+(defmacro with-gpu* (bindings &body body)
+  "General RAII scoping over any number of GPU-HANDLEs, without the deep
+indentation of nesting WITH-GPU-INSTANCE/WITH-GPU-ADAPTER/etc by hand.
+
+Each element of BINDINGS is (VAR FORM) or ((VAR1 VAR2 ...) FORM) for a FORM
+that returns multiple values (e.g. MAKE-TEXTURE-2D). Every bound variable is
+released via RELEASE when BODY exits -- normally or abnormally -- in reverse
+binding order, mirroring what a hand-nested stack of WITH-X macros would do:
+
+  (with-gpu* ((inst    (make-gpu-instance))
+              (adapter (request-gpu-adapter inst))
+              (device  (request-gpu-device inst adapter))
+              ((tex view) (make-texture-2d device 256 256)))
+    ...)  ; view, tex, device, adapter, inst released on exit, in that order"
+  (if (null bindings)
+      `(progn ,@body)
+      (destructuring-bind (vars form) (first bindings)
+        (let ((vars (if (listp vars) vars (list vars))))
+          `(multiple-value-bind ,vars ,form
+             (unwind-protect
+                 (with-gpu* ,(rest bindings) ,@body)
+               ,@(mapcar (lambda (v) `(release ,v)) (reverse vars))))))))
+
 
 ;;;; -------------------------------------------------------------------------
 ;;;; Creation helpers
@@ -181,6 +210,11 @@
         (unless (eq status :success)
           (error "Failed to request device: ~a" status))
         (make-instance 'gpu-device :handle (mem-ref out 'wgpu-device))))))
+
+(defun get-device-queue (device)
+  "Return DEVICE's GPU-QUEUE. Each device has exactly one queue; safe to call
+more than once (each call returns a fresh reference -- release with RELEASE)."
+  (make-instance 'gpu-queue :handle (wgpu-device-get-queue (handle device))))
 
 (defun make-shader-module (device wgsl-source &key label)
   "Compile a WGSL shader from SOURCE-STRING. Returns a GPU-SHADER-MODULE."
@@ -602,17 +636,50 @@ has been submitted."))
 ACQUIRE-FRAME-TEXTURE-VIEW. For a real surface this presents to the screen;
 offscreen targets may no-op here and expose readback separately."))
 
-(defmethod acquire-frame-texture-view ((target gpu-surface))
+(defun %decode-surface-texture-status (raw)
+  "Map RAW (the status field's underlying u32) to a keyword. wgpu-native can
+return values outside the base WGPUSurfaceGetCurrentTextureStatus enum --
+e.g. #x30001 (its native \"Occluded\" extension, returned when the window
+isn't visible/focused, notably on macOS) -- so this decodes by hand instead
+of via CFFI's enum type, which signals an error on an unrecognized value
+rather than returning a status a caller can just skip the frame on."
+  (case raw
+    (#x1 :success-optimal)
+    (#x2 :success-suboptimal)
+    (#x3 :timeout)
+    (#x4 :outdated)
+    (#x5 :lost)
+    (#x6 :error)
+    (#x30001 :occluded)   ; wgpu-native extension; treat like :timeout -- skip, no reconfigure
+    (t :unknown)))
+
+(defun get-current-surface-texture (surface)
+  "Return (values GPU-TEXTURE-VIEW-or-NIL STATUS) for SURFACE's current frame.
+STATUS is one of :success-optimal, :success-suboptimal, :timeout, :outdated,
+:lost, :error, :occluded, or :unknown. The view is non-NIL only for the two
+:success-* statuses; every other status means \"no frame this call, try again
+next time\" and callers should just skip rendering.
+
+Lower-level than ACQUIRE-FRAME-TEXTURE-VIEW: use this instead when a caller
+needs to react to STATUS itself -- e.g. reconfiguring the surface on
+:success-suboptimal/:outdated before rendering the next frame -- rather than
+just skipping frames with no view."
   (with-wgpu-struct (st '(:struct wgpu-surface-texture))
-    (wgpu-surface-get-current-texture (handle target) st)
-    (let ((tex    (foreign-slot-value st '(:struct wgpu-surface-texture) 'texture))
-          (status (mem-ref (foreign-slot-pointer st '(:struct wgpu-surface-texture) 'status) :uint32)))
-      (when (and (not (null-pointer-p tex))
-                 (or (= status 1) (= status 2))) ; success-optimal / success-suboptimal
-        (with-wgpu-struct (vdesc '(:struct wgpu-texture-view-descriptor))
-          (setf (foreign-slot-value vdesc '(:struct wgpu-texture-view-descriptor) 'mip-level-count) #xFFFFFFFF
-                (foreign-slot-value vdesc '(:struct wgpu-texture-view-descriptor) 'array-layer-count) #xFFFFFFFF)
-          (make-instance 'gpu-texture-view :handle (wgpu-texture-create-view tex vdesc)))))))
+    (wgpu-surface-get-current-texture (handle surface) st)
+    (let* ((tex    (foreign-slot-value st '(:struct wgpu-surface-texture) 'texture))
+           (raw    (mem-ref (foreign-slot-pointer st '(:struct wgpu-surface-texture) 'status) :uint32))
+           (status (%decode-surface-texture-status raw)))
+      (values
+       (when (and (not (null-pointer-p tex))
+                  (member status '(:success-optimal :success-suboptimal)))
+         (with-wgpu-struct (vdesc '(:struct wgpu-texture-view-descriptor))
+           (setf (foreign-slot-value vdesc '(:struct wgpu-texture-view-descriptor) 'mip-level-count) #xFFFFFFFF
+                 (foreign-slot-value vdesc '(:struct wgpu-texture-view-descriptor) 'array-layer-count) #xFFFFFFFF)
+           (make-instance 'gpu-texture-view :handle (wgpu-texture-create-view tex vdesc))))
+       status))))
+
+(defmethod acquire-frame-texture-view ((target gpu-surface))
+  (get-current-surface-texture target))
 
 (defmethod present-frame ((target gpu-surface))
   (wgpu-surface-present (handle target)))
@@ -644,9 +711,57 @@ MAPPED-AT-CREATION when T maps the buffer at creation for initial upload."
       (when label-data (foreign-free label-data))
       (foreign-free desc))))
 
-(defun write-buffer (queue buffer offset data size)
-  "Upload SIZE bytes from foreign pointer DATA into BUFFER at byte OFFSET via QUEUE."
-  (wgpu-queue-write-buffer (handle queue) (handle buffer) offset data size))
+(defun %vector-byte-length (data)
+  (etypecase data
+    ((array single-float (*))       (* (length data) 4))
+    ((array (unsigned-byte 32) (*)) (* (length data) 4))
+    ((array (unsigned-byte 8) (*))  (length data))))
+
+(defun make-buffer-with-data (device queue data usage &key label)
+  "Create a GPU-BUFFER sized to DATA and upload DATA to it via QUEUE in one call.
+DATA is any vector type accepted by WRITE-BUFFER (single-float, (unsigned-byte
+32), or (unsigned-byte 8)). Collapses the create-buffer + alloc/copy/write/free
+sequence callers previously wrote out by hand into a single form."
+  (let* ((size (%vector-byte-length data))
+         (buf  (make-buffer device :size size :usage usage :label label)))
+    (write-buffer queue buf 0 data size)
+    buf))
+
+(defun %write-buffer-from-vector (queue buffer offset vector foreign-type elt-size size)
+  "Copy VECTOR's elements into a scratch foreign buffer of SIZE bytes and upload it.
+FOREIGN-TYPE/ELT-SIZE describe one element (e.g. :float/4, :uint32/4, :uint8/1)."
+  (let* ((n    (truncate size elt-size))
+         (fptr (foreign-alloc :uint8 :count size)))
+    (unwind-protect
+        (progn
+          (dotimes (i n)
+            (setf (mem-aref fptr foreign-type i) (aref vector i)))
+          (wgpu-queue-write-buffer (handle queue) (handle buffer) offset fptr size))
+      (foreign-free fptr))))
+
+(defun write-buffer (queue buffer offset data &optional size)
+  "Upload DATA into BUFFER at byte OFFSET via QUEUE. DATA may be:
+
+  - a foreign pointer -- SIZE is required and is the raw byte count, copied
+    as-is (the low-level path; unchanged from before)
+  - a (simple-array single-float (*))       -- packed as f32, elt-size 4
+  - a (simple-array (unsigned-byte 32) (*)) -- packed as u32, elt-size 4
+  - a (simple-array (unsigned-byte 8) (*))  -- packed as raw bytes, elt-size 1
+
+For vector DATA, SIZE defaults to the vector's full byte length; pass a
+smaller SIZE to upload only a prefix. This absorbs the foreign-alloc /
+element-copy-loop / foreign-free ceremony that callers previously had to
+write by hand for every uniform/vertex/index upload."
+  (etypecase data
+    (foreign-pointer
+     (wgpu-queue-write-buffer (handle queue) (handle buffer) offset data
+                               (or size (error "SIZE is required when DATA is a foreign pointer"))))
+    ((array single-float (*))
+     (%write-buffer-from-vector queue buffer offset data :float 4 (or size (* (length data) 4))))
+    ((array (unsigned-byte 32) (*))
+     (%write-buffer-from-vector queue buffer offset data :uint32 4 (or size (* (length data) 4))))
+    ((array (unsigned-byte 8) (*))
+     (%write-buffer-from-vector queue buffer offset data :uint8 1 (or size (length data))))))
 
 
 ;;;; -------------------------------------------------------------------------
@@ -696,8 +811,20 @@ Defaults to RGBA8 format with texture-binding + copy-dst usage for atlas uploads
       (foreign-free desc))))
 
 (defun write-texture (queue texture-view data data-size &key width height (bytes-per-row 0))
-  "Upload DATA (foreign pointer, DATA-SIZE bytes) to TEXTURE-VIEW as a full 2D image.
-BYTES-PER-ROW must be set to width * bytes-per-texel."
+  "Upload DATA to TEXTURE-VIEW as a full 2D image. DATA may be a foreign
+pointer (DATA-SIZE bytes, copied as-is) or a (simple-array (unsigned-byte 8)
+(*)) (DATA-SIZE is redundant with its length but still required, for symmetry
+with the pointer case and to allow uploading a prefix). BYTES-PER-ROW must be
+set to width * bytes-per-texel."
+  (when (typep data '(array (unsigned-byte 8) (*)))
+    (let ((fptr (foreign-alloc :uint8 :count data-size)))
+      (return-from write-texture
+        (unwind-protect
+            (progn
+              (dotimes (i data-size) (setf (mem-aref fptr :uint8 i) (aref data i)))
+              (write-texture queue texture-view fptr data-size
+                             :width width :height height :bytes-per-row bytes-per-row))
+          (foreign-free fptr)))))
   (with-foreign-object (dst '(:struct wgpu-texel-copy-texture-info))
     (foreign-funcall "memset" :pointer dst :int 0
                     :size (foreign-type-size '(:struct wgpu-texel-copy-texture-info)) :void)
@@ -725,7 +852,7 @@ BYTES-PER-ROW must be set to width * bytes-per-texel."
 
 (defun make-sampler (device &key (mag-filter :linear) (min-filter :linear)
                                  (address-mode :clamp-to-edge))
-  "Create a WGPUSampler. Returns a raw WGPUSampler handle (not a CLOS wrapper).
+  "Create a WGPUSampler. Returns a GPU-SAMPLER; release with RELEASE.
 ADDRESS-MODE applies to all three axes."
   (with-wgpu-struct (desc '(:struct wgpu-sampler-descriptor))
     (setf (foreign-slot-value desc '(:struct wgpu-sampler-descriptor) 'next-in-chain) (null-pointer)
@@ -743,7 +870,7 @@ ADDRESS-MODE applies to all three axes."
     (let ((ptr (wgpu-device-create-sampler (handle device) desc)))
       (when (null-pointer-p ptr)
         (error "Failed to create sampler"))
-      ptr)))
+      (make-instance 'gpu-sampler :handle ptr))))
 
 
 ;;;; -------------------------------------------------------------------------
@@ -751,19 +878,21 @@ ADDRESS-MODE applies to all three axes."
 ;;;; -------------------------------------------------------------------------
 
 (defun get-pipeline-bind-group-layout (pipeline group-index)
-  "Return the WGPUBindGroupLayout for GROUP-INDEX of PIPELINE (auto-layout mode)."
-  (wgpu-render-pipeline-get-bind-group-layout (handle pipeline) group-index))
+  "Return the GPU-BIND-GROUP-LAYOUT for GROUP-INDEX of PIPELINE (auto-layout mode).
+Each call returns a new reference -- release it with RELEASE."
+  (make-instance 'gpu-bind-group-layout
+                 :handle (wgpu-render-pipeline-get-bind-group-layout (handle pipeline) group-index)))
 
 (defun make-bind-group (device layout entries)
-  "Create a WGPUBindGroup. Returns a raw WGPUBindGroup handle.
+  "Create a WGPUBindGroup. Returns a GPU-BIND-GROUP; release with RELEASE.
 
-LAYOUT is a raw WGPUBindGroupLayout handle.
+LAYOUT is a GPU-BIND-GROUP-LAYOUT or raw WGPUBindGroupLayout handle.
 ENTRIES is a list of plists, each with:
   :binding      — binding index (required)
   :buffer       — a GPU-BUFFER or raw buffer handle (exclusive with :sampler/:texture-view)
   :offset       — byte offset into buffer (default 0)
   :size         — byte size for buffer binding (default 0 = whole buffer)
-  :sampler      — a raw WGPUSampler handle
+  :sampler      — a GPU-SAMPLER or raw WGPUSampler handle
   :texture-view — a GPU-TEXTURE-VIEW or raw texture view handle"
   (let* ((n     (length entries))
          (eptr  (if (plusp n)
@@ -790,7 +919,8 @@ ENTRIES is a list of plists, each with:
                              (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'size)
                              (getf e :size 0)))
                       (smp
-                       (setf (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'sampler) smp))
+                       (setf (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'sampler)
+                             (etypecase smp (gpu-sampler (handle smp)) (t smp))))
                       (tv
                        (setf (foreign-slot-value ep '(:struct wgpu-bind-group-entry) 'texture-view)
                              (etypecase tv
@@ -798,7 +928,8 @@ ENTRIES is a list of plists, each with:
                                (t tv))))))))
           (with-wgpu-struct (desc '(:struct wgpu-bind-group-descriptor))
             (setf (foreign-slot-value desc '(:struct wgpu-bind-group-descriptor) 'next-in-chain) (null-pointer)
-                  (foreign-slot-value desc '(:struct wgpu-bind-group-descriptor) 'layout) layout
+                  (foreign-slot-value desc '(:struct wgpu-bind-group-descriptor) 'layout)
+                  (etypecase layout (gpu-bind-group-layout (handle layout)) (t layout))
                   (foreign-slot-value desc '(:struct wgpu-bind-group-descriptor) 'entry-count) n
                   (foreign-slot-value desc '(:struct wgpu-bind-group-descriptor) 'entries)
                   (if (plusp n) eptr (null-pointer)))
@@ -806,7 +937,7 @@ ENTRIES is a list of plists, each with:
             (let ((ptr (wgpu-device-create-bind-group (handle device) desc)))
               (when (null-pointer-p ptr)
                 (error "Failed to create bind group"))
-              ptr)))
+              (make-instance 'gpu-bind-group :handle ptr))))
       (unless (null-pointer-p eptr)
         (foreign-free eptr)))))
 
@@ -826,8 +957,12 @@ ENTRIES is a list of plists, each with:
    (handle pass) (handle buffer) format offset (or size #xFFFFFFFFFFFFFFFF)))
 
 (defun set-bind-group (pass group-index bind-group)
-  "Bind BIND-GROUP at GROUP-INDEX on PASS. BIND-GROUP is a raw WGPUBindGroup handle."
-  (wgpu-render-pass-encoder-set-bind-group (handle pass) group-index bind-group 0 (null-pointer)))
+  "Bind BIND-GROUP at GROUP-INDEX on PASS. BIND-GROUP is a GPU-BIND-GROUP or raw
+WGPUBindGroup handle."
+  (wgpu-render-pass-encoder-set-bind-group
+   (handle pass) group-index
+   (etypecase bind-group (gpu-bind-group (handle bind-group)) (t bind-group))
+   0 (null-pointer)))
 
 (defun set-scissor-rect (pass x y width height)
   "Set the scissor rect on PASS. All values are integers in pixels."

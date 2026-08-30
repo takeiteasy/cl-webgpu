@@ -103,6 +103,20 @@
              (unless (uiop:symbol-call :cl-webgpu/shader/tests :run-tests)
                (error "cl-webgpu/shader/tests: one or more tests failed"))))
 
+(asdf:defsystem #:cl-webgpu/wrapper/tests
+  :description "Smoke tests for cl-webgpu/wrapper (require a real GPU adapter)"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :depends-on (#:cl-webgpu/wrapper #:cl-webgpu/headless #:fiveam)
+  :pathname "tests/"
+  :serial t
+  :components ((:file "wrapper-package")
+               (:file "wrapper-tests"))
+  :perform (test-op (op c)
+             (unless (uiop:symbol-call :cl-webgpu/wrapper/tests :run-tests)
+               (error "cl-webgpu/wrapper/tests: one or more tests failed"))))
+
 (asdf:defsystem #:cl-webgpu/nuklear
   :description "Nuklear immediate-mode GUI integration for cl-webgpu"
   :author "George Watson <gigolo@hotmail.co.uk>"

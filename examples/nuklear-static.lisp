@@ -58,7 +58,7 @@
     (cl-webgpu:load-wgpu-libraries :wgpu-path wgpu :shim-path shim)
     (load-glfw-library :path shim)))
 
-(defun render-frame (device surface pipeline queue renderer ctx)
+(defun render-frame (device surface queue renderer ctx)
   ;; Use the wrapper's own ACQUIRE-FRAME-TEXTURE-VIEW (wrapper/wrapper.lisp)
   ;; rather than hand-rolling WGPU-TEXTURE-CREATE-VIEW here: the latter, called
   ;; with a zero-initialized WGPU-TEXTURE-VIEW-DESCRIPTOR, leaves MIP-LEVEL-COUNT
@@ -107,9 +107,7 @@
                   (format t "Button clicked! slider = ~,2F~%" *slider-value*)))
               (nuklear::nk-end ctx)
               ;; Render to the pass
-              (cl-webgpu/nuklear:render-nuklear renderer ctx pass *width* *height*
-                                                (make-instance 'gpu-queue :handle
-                                                               (cl-webgpu:wgpu-device-get-queue (handle device))))
+              (cl-webgpu/nuklear:render-nuklear renderer ctx pass *width* *height* queue)
               ;; END-AND-SUBMIT must run here, inside WITH-RENDER-PASS's body: it
               ;; calls WGPU-RENDER-PASS-ENCODER-END on PASS, and PASS only stays
               ;; bound (and un-released) for the dynamic extent of this body --
@@ -117,8 +115,7 @@
               ;; WITH-RENDER-PASS returns, as this example previously did, left
               ;; PASS unbound (a compiler warning that was going unheeded) and
               ;; would in any case have raced WITH-RENDER-PASS's own release.
-              (let ((q (make-instance 'gpu-queue :handle (cl-webgpu:wgpu-device-get-queue (handle device)))))
-                (end-and-submit encoder pass q surface))))
+              (end-and-submit encoder pass queue surface)))
         (release view)))))
 
 (defun run ()
@@ -133,53 +130,48 @@
       (setf *width* fb-width *height* fb-height)
       (setf *ui-scale* (float (/ fb-width *window-width*) 1.0)))
     (unwind-protect
-        (with-gpu-instance (inst)
-          (with-gpu-adapter (adapter inst)
-            (with-gpu-device (device inst adapter)
-              (let* ((raw-surface (glfw-create-window-wgpu-surface (handle inst) window))
-                     (surface     (make-instance 'gpu-surface :handle raw-surface))
-                     (fmt         (get-surface-format surface adapter)))
-                (unwind-protect
-                    (progn
-                      (configure-surface surface device fmt *width* *height*)
-                      ;; Init nuklear context with default font atlas.
-                      ;; CTX is heap-allocated (not WITH-FOREIGN-OBJECTS) because
-                      ;; nk_context is ~18KB; SBCL's CFFI forces large stack-allocated
-                      ;; foreign objects onto the C stack, which segfaults at that size.
-                      (let ((ctx (cffi:foreign-alloc '(:struct nuklear::nk-context))))
-                       (unwind-protect
-                        (cffi:with-foreign-objects ((atlas '(:struct nuklear::nk-font-atlas))
-                                                    (aw    :int) (ah :int))
-                        (nuklear::nk-font-atlas-init-default atlas)
-                        (nuklear::nk-font-atlas-begin atlas)
-                        (let* ((font   (nuklear::nk-font-atlas-add-default atlas (* 13.0 *ui-scale*) (cffi:null-pointer)))
-                               (pixels (nuklear::nk-font-atlas-bake atlas aw ah :nk-font-atlas-rgba32))
-                               (atlas-w (cffi:mem-ref aw :int))
-                               (atlas-h (cffi:mem-ref ah :int))
-                               (queue   (make-instance 'gpu-queue
-                                                       :handle (cl-webgpu:wgpu-device-get-queue (handle device))))
-                               (renderer (cl-webgpu/nuklear:make-nuklear-renderer
-                                          device queue *width* *height* fmt
-                                          atlas pixels atlas-w atlas-h)))
-                          (nuklear::nk-font-atlas-cleanup atlas)
-                          ;; Init context with the baked font
-                          (let ((handle-ptr (cffi:foreign-slot-pointer font '(:struct nuklear::nk-font) 'nuklear::handle)))
-                            (nuklear::nk-init-default ctx handle-ptr))
-                          (install-input-callbacks window)
-                          (unwind-protect
-                              (progn
-                                (format t "Running nuklear-static demo — drag the slider, close window to exit~%")
-                                (loop until (window-should-close-p window)
-                                      do (poll-events)
-                                         (nuklear-new-frame ctx window)
-                                         (render-frame device surface nil queue renderer ctx)
-                                         (sleep 0.016)))
-                            (cl-webgpu/nuklear:free-nuklear-renderer renderer)
-                            (nuklear::nk-free ctx)
-                            (nuklear::nk-font-atlas-clear atlas)
-                            (release queue))))
-                        (cffi:foreign-free ctx))))
-                  (release surface))))))
+        (with-gpu* ((inst    (make-gpu-instance))
+                    (adapter (request-gpu-adapter inst))
+                    (device  (request-gpu-device inst adapter))
+                    (queue   (get-device-queue device))
+                    (surface (make-instance 'gpu-surface
+                                            :handle (glfw-create-window-wgpu-surface (handle inst) window))))
+          (let ((fmt (get-surface-format surface adapter)))
+            (configure-surface surface device fmt *width* *height*)
+            ;; Init nuklear context with default font atlas.
+            ;; CTX is heap-allocated (not WITH-FOREIGN-OBJECTS) because
+            ;; nk_context is ~18KB; SBCL's CFFI forces large stack-allocated
+            ;; foreign objects onto the C stack, which segfaults at that size.
+            (let ((ctx (cffi:foreign-alloc '(:struct nuklear::nk-context))))
+              (unwind-protect
+                  (cffi:with-foreign-objects ((atlas '(:struct nuklear::nk-font-atlas))
+                                              (aw    :int) (ah :int))
+                    (nuklear::nk-font-atlas-init-default atlas)
+                    (nuklear::nk-font-atlas-begin atlas)
+                    (let* ((font   (nuklear::nk-font-atlas-add-default atlas (* 13.0 *ui-scale*) (cffi:null-pointer)))
+                           (pixels (nuklear::nk-font-atlas-bake atlas aw ah :nk-font-atlas-rgba32))
+                           (atlas-w (cffi:mem-ref aw :int))
+                           (atlas-h (cffi:mem-ref ah :int))
+                           (renderer (cl-webgpu/nuklear:make-nuklear-renderer
+                                      device queue *width* *height* fmt
+                                      atlas pixels atlas-w atlas-h)))
+                      (nuklear::nk-font-atlas-cleanup atlas)
+                      ;; Init context with the baked font
+                      (let ((handle-ptr (cffi:foreign-slot-pointer font '(:struct nuklear::nk-font) 'nuklear::handle)))
+                        (nuklear::nk-init-default ctx handle-ptr))
+                      (install-input-callbacks window)
+                      (unwind-protect
+                          (progn
+                            (format t "Running nuklear-static demo — drag the slider, close window to exit~%")
+                            (loop until (window-should-close-p window)
+                                  do (poll-events)
+                                     (nuklear-new-frame ctx window)
+                                     (render-frame device surface queue renderer ctx)
+                                     (sleep 0.016)))
+                        (cl-webgpu/nuklear:free-nuklear-renderer renderer)
+                        (nuklear::nk-free ctx)
+                        (nuklear::nk-font-atlas-clear atlas))))
+                (cffi:foreign-free ctx)))))
       (destroy-window window)
       (terminate)
       (format t "Done.~%"))))
