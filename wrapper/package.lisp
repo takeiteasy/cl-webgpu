@@ -27,7 +27,7 @@
    #:wgpu-blend-state #:wgpu-blend-component
    ;; struct types for depth-stencil support
    #:wgpu-depth-stencil-state #:wgpu-render-pass-depth-stencil-attachment
-   #:wgpu-stencil-face-state #:wgpu-texture-descriptor #:wgpu-extent3-d
+   #:wgpu-stencil-face-state #:wgpu-texture-descriptor #:wgpu-extent3-d #:wgpu-origin3-d
    ;; enums for depth-stencil and texture creation
    #:wgpu-compare-function #:wgpu-optional-bool
    #:wgpu-texture-dimension #:wgpu-texture-aspect #:wgpu-texture-view-dimension
@@ -115,6 +115,8 @@
    #:max-anisotropy
    ;; texel-copy slot names
    #:bytes-per-row #:rows-per-image #:mip-level #:origin #:texture
+   ;; origin3d slot names (partial texture writes)
+   #:x #:y #:z
    ;; depth-stencil state slot names
    #:depth-write-enabled #:depth-compare
    #:stencil-front #:stencil-back #:stencil-read-mask #:stencil-write-mask

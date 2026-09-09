@@ -7,9 +7,11 @@ Common Lisp FFI bindings for [WebGPU](https://www.w3.org/TR/webgpu/) via [wgpu-n
 - **SBCL** (or another CFFI-capable Lisp)
 - **Quicklisp**
 - **Rust / Cargo** — to build wgpu-native from source (or use a pre-built binary)
-- **GLFW 3** — for windowed examples (install via Homebrew, apt, etc.)
+- **GLFW 3** — for the GLFW windowed examples (install via Homebrew, apt, etc.)
+- **SDL 3** — for the SDL3 windowed examples (`cl-webgpu/sdl3`); see [docs/sdl3.md](docs/sdl3.md)
 - **C compiler** (`cc` / `clang` / `gcc`)
 - **cl-nuklear** — required for `cl-webgpu/nuklear` only; symlink `../cl-nuklear` into `~/quicklisp/local-projects/`
+- **cl-dear-imgui** — required for `cl-webgpu/imgui` only; symlink `../cl-dear-imgui` into `~/quicklisp/local-projects/` and build its native lib (`git submodule update --init && make` in that repo)
 
 ## Building
 
@@ -26,7 +28,7 @@ cargo build --release
 
 Or download a pre-built binary from the [wgpu-native releases page](https://github.com/gfx-rs/wgpu-native/releases) and place `libwgpu_native.{dylib,so,dll}` in `deps/wgpu-native/target/release/`.
 
-### 2. Build the C shim + GLFW bridge
+### 2. Build the C shim + windowing bridges
 
 ```bash
 make        # builds libwebgpu_shim + libglfw3webgpu + libSDL3_webgpu in shim/
@@ -55,6 +57,14 @@ The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), whi
 
 ;; Headless triangle — no window, renders to a PNG (for SSH/CI)
 (load "examples/headless-triangle.lisp")
+
+;; Nuklear GUI — GLFW window / SDL3 window
+(load "examples/nuklear-static.lisp")
+(load "examples/nuklear-static-sdl3.lisp")
+
+;; Dear ImGui GUI — GLFW window / SDL3 window
+(load "examples/imgui-demo.lisp")
+(load "examples/imgui-demo-sdl3.lisp")
 ```
 
 ## Systems
@@ -71,6 +81,10 @@ The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), whi
 | `cl-webgpu/nuklear-input-common` | Shared Nuklear input plumbing for the per-backend glue systems |
 | `cl-webgpu/nuklear-glfw-glue` | GLFW mouse/keyboard/scroll input wiring for `cl-webgpu/nuklear` |
 | `cl-webgpu/nuklear-sdl3-glue` | SDL3 mouse/keyboard/scroll input wiring for `cl-webgpu/nuklear` |
+| `cl-webgpu/imgui` | Dear ImGui immediate-mode GUI backend (requires `cl-dear-imgui`) — see [docs/imgui.md](docs/imgui.md) |
+| `cl-webgpu/imgui-input-common` | Shared Dear ImGui input plumbing for the per-backend glue systems |
+| `cl-webgpu/imgui-glfw-glue` | GLFW mouse/keyboard/scroll/text input wiring for `cl-webgpu/imgui` |
+| `cl-webgpu/imgui-sdl3-glue` | SDL3 mouse/keyboard/scroll/text input wiring for `cl-webgpu/imgui` |
 | `cl-webgpu/codegen` | Re-generates `cl-webgpu` bindings from C headers |
 
 ## Wrapper Layer (`cl-webgpu/wrapper`)
@@ -233,6 +247,7 @@ in `deps/webgpu/`. After updating headers:
 - [sdl3webgpu](https://github.com/eliemichel/sdl3webgpu) [MIT](https://github.com/eliemichel/sdl3webgpu/blob/main/LICENSE.txt) (vendored in `deps/sdl3webgpu/`, for `cl-webgpu/sdl3`)
 - [SDL3](https://github.com/libsdl-org/SDL) [ZLIB](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt)
 - [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) [MIT](https://github.com/Immediate-Mode-UI/Nuklear/blob/master/LICENSE) (via [cl-nuklear](https://github.com/takeiteasy/cl-nuklear), for `cl-webgpu/nuklear`)
-- Dependencies: [cl-glfw3](https://github.com/AlexCharlton/cl-glfw3) (for `cl-webgpu/glfw`), [cl-sdl3](https://github.com/ellisvelo/cl-sdl3) (for `cl-webgpu/sdl3`), [zpng](https://github.com/xach/zpng) (for `cl-webgpu/headless`), cffi, bordeaux-threads, alexandria, cl-ppcre, uiop
+- [Dear ImGui](https://github.com/ocornut/imgui) [MIT](https://github.com/ocornut/imgui/blob/master/LICENSE.txt) (via [cl-dear-imgui](https://github.com/takeiteasy/cl-dear-imgui), for `cl-webgpu/imgui`)
+- Dependencies: [cl-glfw3](https://github.com/AlexCharlton/cl-glfw3) (for `cl-webgpu/glfw`), [cl-sdl3](https://github.com/ellisvelo/cl-sdl3) (for `cl-webgpu/sdl3`), [cl-dear-imgui](https://github.com/takeiteasy/cl-dear-imgui) (for `cl-webgpu/imgui`), [zpng](https://github.com/xach/zpng) (for `cl-webgpu/headless`), cffi, bordeaux-threads, alexandria, cl-ppcre, uiop
 
 [MIT](LICENSE)

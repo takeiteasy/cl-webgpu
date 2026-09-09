@@ -162,6 +162,51 @@
                 :components
                 ((:file "sdl3-input")))))
 
+(asdf:defsystem #:cl-webgpu/imgui
+  :description "Dear ImGui immediate-mode GUI integration for cl-webgpu"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-webgpu #:cl-webgpu/wrapper #:cl-dear-imgui)
+  :components ((:module "imgui"
+                :components
+                ((:file "package")
+                 (:file "backend")))))
+
+(asdf:defsystem #:cl-webgpu/imgui-input-common
+  :description "Shared Dear ImGui input plumbing for the per-backend glue systems"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-webgpu/imgui)
+  :components ((:module "imgui"
+                :components
+                ((:file "input-common")))))
+
+(asdf:defsystem #:cl-webgpu/imgui-glfw-glue
+  :description "GLFW input wiring for cl-webgpu/imgui (mouse/keyboard/scroll/text)"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-webgpu/imgui-input-common #:cl-webgpu/glfw)
+  :components ((:module "imgui"
+                :components
+                ((:file "glfw-input")))))
+
+(asdf:defsystem #:cl-webgpu/imgui-sdl3-glue
+  :description "SDL3 input wiring for cl-webgpu/imgui (mouse/keyboard/scroll/text)"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-webgpu/imgui-input-common #:cl-webgpu/sdl3)
+  :components ((:module "imgui"
+                :components
+                ((:file "sdl3-input")))))
+
 (asdf:defsystem #:cl-webgpu/codegen
   :description "Code generator for cl-webgpu CFFI bindings from C headers"
   :author "George Watson <gigolo@hotmail.co.uk>"

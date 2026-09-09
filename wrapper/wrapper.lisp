@@ -811,12 +811,35 @@ Defaults to RGBA8 format with texture-binding + copy-dst usage for atlas uploads
       (when label-data (foreign-free label-data))
       (foreign-free desc))))
 
-(defun write-texture (queue texture-view data data-size &key width height (bytes-per-row 0))
-  "Upload DATA to TEXTURE-VIEW as a full 2D image. DATA may be a foreign
-pointer (DATA-SIZE bytes, copied as-is) or a (simple-array (unsigned-byte 8)
-(*)) (DATA-SIZE is redundant with its length but still required, for symmetry
-with the pointer case and to allow uploading a prefix). BYTES-PER-ROW must be
-set to width * bytes-per-texel."
+(defun write-texture (queue texture-view data data-size
+                      &key width height (bytes-per-row 0) rows-per-image
+                           (x 0) (y 0) (mip-level 0) (offset 0))
+  "Upload DATA into TEXTURE-VIEW.
+
+DATA may be a foreign pointer (DATA-SIZE bytes, copied as-is) or a
+(simple-array (unsigned-byte 8) (*)) (DATA-SIZE is redundant with its length
+but still required, for symmetry with the pointer case and to allow uploading
+a prefix).
+
+By default this writes a full 2D image at mip level 0, origin (0,0). The
+keyword args let a caller patch a WIDTH x HEIGHT sub-rectangle of an existing
+texture (e.g. Dear ImGui's ImTextureStatus_WantUpdates, or per-level mipmap
+uploads):
+
+  :X :Y          destination origin within the texture, in texels
+  :MIP-LEVEL     destination mip level
+  :OFFSET        starting byte offset into DATA / the source buffer
+  :BYTES-PER-ROW stride between rows in the source (width * bytes-per-texel for
+                 a tightly packed source; the FULL texture pitch when DATA
+                 points into a larger CPU-side image)
+  :ROWS-PER-IMAGE source rows per layer (defaults to HEIGHT)
+
+wgpuQueueWriteTexture imposes no 256-byte BYTES-PER-ROW alignment (that
+constraint is buffer-to-texture copies only), so a source pitch may be passed
+through unchanged. Note DATA-SIZE for a sub-rect is not width*height*bpp: with
+a non-tight BYTES-PER-ROW the API reads bytes-per-row*(height-1) +
+width*bytes-per-texel, so DATA must expose at least that many bytes past
+OFFSET."
   (when (typep data '(array (unsigned-byte 8) (*)))
     (let ((fptr (foreign-alloc :uint8 :count data-size)))
       (return-from write-texture
@@ -824,7 +847,9 @@ set to width * bytes-per-texel."
             (progn
               (dotimes (i data-size) (setf (mem-aref fptr :uint8 i) (aref data i)))
               (write-texture queue texture-view fptr data-size
-                             :width width :height height :bytes-per-row bytes-per-row))
+                             :width width :height height :bytes-per-row bytes-per-row
+                             :rows-per-image rows-per-image
+                             :x x :y y :mip-level mip-level :offset offset))
           (foreign-free fptr)))))
   (with-foreign-object (dst '(:struct wgpu-texel-copy-texture-info))
     (foreign-funcall "memset" :pointer dst :int 0
@@ -834,12 +859,16 @@ set to width * bytes-per-texel."
             (gpu-texture      (handle texture-view))
             (gpu-texture-view (handle texture-view))
             (t texture-view))
-          (foreign-slot-value dst '(:struct wgpu-texel-copy-texture-info) 'mip-level) 0
+          (foreign-slot-value dst '(:struct wgpu-texel-copy-texture-info) 'mip-level) mip-level
           (foreign-slot-value dst '(:struct wgpu-texel-copy-texture-info) 'aspect) :all)
+    (let ((org (foreign-slot-pointer dst '(:struct wgpu-texel-copy-texture-info) 'origin)))
+      (setf (foreign-slot-value org '(:struct wgpu-origin3-d) 'x) x
+            (foreign-slot-value org '(:struct wgpu-origin3-d) 'y) y
+            (foreign-slot-value org '(:struct wgpu-origin3-d) 'z) 0))
     (with-foreign-object (layout '(:struct wgpu-texel-copy-buffer-layout))
-      (setf (foreign-slot-value layout '(:struct wgpu-texel-copy-buffer-layout) 'offset) 0
+      (setf (foreign-slot-value layout '(:struct wgpu-texel-copy-buffer-layout) 'offset) offset
             (foreign-slot-value layout '(:struct wgpu-texel-copy-buffer-layout) 'bytes-per-row) bytes-per-row
-            (foreign-slot-value layout '(:struct wgpu-texel-copy-buffer-layout) 'rows-per-image) height)
+            (foreign-slot-value layout '(:struct wgpu-texel-copy-buffer-layout) 'rows-per-image) (or rows-per-image height))
       (with-foreign-object (sz '(:struct wgpu-extent3-d))
         (setf (foreign-slot-value sz '(:struct wgpu-extent3-d) 'width)  width
               (foreign-slot-value sz '(:struct wgpu-extent3-d) 'height) height
