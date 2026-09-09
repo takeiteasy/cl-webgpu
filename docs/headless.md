@@ -1,6 +1,6 @@
-# Headless rendering — `cl-webgpu/headless` + `cl-webgpu/glfw-dummy`
+# Headless rendering — `cl-webgpu/headless`
 
-Renders to an offscreen GPU texture and reads the result back as a PNG,
+Renders to an offscreen GPU target and reads the result back as a PNG,
 without opening a window or touching a display server. Useful for testing
 graphics changes over SSH/CI, where there's no screen to look at and (on
 macOS) no screen-recording permission to grant to a remote process.
@@ -41,21 +41,33 @@ of `END-AND-SUBMIT` when TARGET might not be a real surface:
     (present-frame target)))
 ```
 
-Code written this way works unmodified against either a real `GPU-SURFACE`
-or a `GPU-OFFSCREEN-TARGET` — swap which one `target` is bound to and
-nothing else changes. `rpg`'s `game/app.lisp` (in the sibling `rpg` repo)
-is a worked example of exactly this refactor.
+Code written this way is windowing-agnostic: the same loop works against a
+real `GPU-SURFACE` (GLFW-created today, SDL3-created tomorrow — each backend
+is just a system that hands you a `GPU-SURFACE`) or a `HEADLESS-TARGET` from
+this package. Swap which one `target` is bound to and nothing else changes.
 
-## `cl-webgpu/headless`: the offscreen target
+## The headless target
 
 ```lisp
-(make-offscreen-target device width height &key (format :rgba8-unorm))
-  → GPU-OFFSCREEN-TARGET
+(make-headless-target device width height &key (format :rgba8-unorm))
+  → HEADLESS-TARGET
 ```
 
 Creates a persistent `WIDTH`x`HEIGHT` texture (`RENDER_ATTACHMENT | COPY_SRC`
 usage) implementing `ACQUIRE-FRAME-TEXTURE-VIEW`/`PRESENT-FRAME`. Release it
 like any other GPU handle when done.
+
+```lisp
+(with-headless-frame (pass device queue target :clear-r 1.0 :clear-g 0.0)
+  ...)
+```
+
+Renders one frame into `TARGET`: acquires the view, opens a render pass bound
+to `PASS` (options go to `BEGIN-RENDER-PASS`), runs the body (draw calls
+only), ends the pass, submits, releases the view, and presents. The body must
+not call `SUBMIT-COMMANDS` itself — the macro submits exactly once after the
+body returns. For multiple render passes per frame, drop to the primitives as
+shown above.
 
 ```lisp
 (readback-texture-png device queue target path) → path
@@ -66,50 +78,26 @@ Reads `TARGET`'s current contents back from the GPU (handles wgpu's
 a PNG. Blocks until the readback completes. Only `:RGBA8-UNORM` targets are
 supported.
 
-## `cl-webgpu/glfw-dummy`: terminating an existing window loop headlessly
-
-Most app loops are shaped like:
-
-```lisp
-(loop until (glfw:window-should-close-p window)
-      do (glfw:poll-events)
-         (render-frame ...))
-```
-
-`cl-webgpu/glfw-dummy` implements the same call names
-(`initialize`, `create-window`, `window-should-close-p`, `poll-events`,
-`destroy-window`, `terminate`, `get-primary-monitor`) without opening a real
-window. `window-should-close-p` starts returning `T` once `poll-events` has
-been called `*frame-budget*` times (default 1) — rebind `*frame-budget*`
-before `create-window` to render more than one frame headless. This lets an
-existing loop terminate on its own after a fixed number of frames instead of
-needing a real window's close event, so the loop body doesn't need an
-`:headless` branch of its own — only the target (surface vs. offscreen) and
-which GLFW package the loop's calls are qualified with need to change.
-
 ## Full example
 
 ```lisp
 (ql:quickload :cl-webgpu/headless)
-(ql:quickload :cl-webgpu/glfw-dummy)
 
 ;; ... create instance/adapter/device as usual ...
 
-(let ((target (cl-webgpu/headless:make-offscreen-target device 800 600))
+(let ((target (cl-webgpu/headless:make-headless-target device 800 600))
       (queue  (make-instance 'gpu-queue :handle (wgpu-device-get-queue (handle device)))))
   (unwind-protect
       (progn
-        (render-frame device target queue) ; your app's render loop body
+        (cl-webgpu/headless:with-headless-frame (pass device queue target
+                                                 :clear-r 0.1d0 :clear-g 0.1d0 :clear-b 0.3d0)
+          ;; your app's draw calls go here
+          )
         (cl-webgpu/headless:readback-texture-png device queue target "/tmp/frame.png"))
     (release queue)
     (release target)))
 ```
 
-## Adopting this in another app
-
-Anything built on `cl-webgpu/wrapper` that currently calls
-`wgpu-surface-get-current-texture`/`wgpu-surface-present` directly (like
-`weasel`'s `core/window.lisp`) can get headless support for free by
-switching to `acquire-frame-texture-view`/`submit-commands`/`present-frame`
-— no behavior change for the existing windowed path, since those functions
-already have `GPU-SURFACE` methods matching what the direct calls did.
+`examples/headless-triangle.lisp` is a complete runnable example (renders a
+triangle headlessly and writes a PNG to `/tmp`). `tests/wrapper-tests.lisp`
+contains a smoke test that renders a frame and asserts on the readback pixels.

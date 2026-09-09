@@ -52,6 +52,9 @@ The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), whi
 
 ;; Triangle with wrapper layer + shader DSL
 (load "examples/triangle-wrapper.lisp")
+
+;; Headless triangle — no window, renders to a PNG (for SSH/CI)
+(load "examples/headless-triangle.lisp")
 ```
 
 ## Systems
@@ -60,9 +63,8 @@ The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), whi
 |---|---|
 | `cl-webgpu` | Auto-generated FFI bindings (types, enums, functions) |
 | `cl-webgpu/glfw` | GLFW surface creation helper |
-| `cl-webgpu/glfw-dummy` | Headless drop-in for `cl-webgpu/glfw`'s window/loop calls — no window, no display server |
 | `cl-webgpu/wrapper` | CLOS wrapper layer — easy-to-use API |
-| `cl-webgpu/headless` | Offscreen render target + PNG readback, for testing without a display (requires `zpng`) |
+| `cl-webgpu/headless` | Offscreen render target + PNG readback, no window/display server (requires `zpng`) |
 | `cl-webgpu/shader` | WGSL shader DSL |
 | `cl-webgpu/nuklear` | Nuklear immediate-mode GUI backend (requires `cl-nuklear`) |
 | `cl-webgpu/codegen` | Re-generates `cl-webgpu` bindings from C headers |

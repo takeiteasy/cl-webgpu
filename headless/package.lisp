@@ -30,8 +30,12 @@
    #:+wgpu-buffer-usage-map-read+
    #:+wgpu-buffer-usage-copy-dst+)
   (:export
-   #:gpu-offscreen-target
-   #:make-offscreen-target
-   #:offscreen-target-width
-   #:offscreen-target-height
+   #:headless-target
+   #:make-headless-target
+   #:headless-target-texture
+   #:headless-target-width
+   #:headless-target-height
+   #:headless-target-format
+   #:with-headless-frame
+   #:readback-texture-data
    #:readback-texture-png))

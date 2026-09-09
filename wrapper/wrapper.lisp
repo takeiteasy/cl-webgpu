@@ -592,7 +592,7 @@ Stencil operations are left undefined (no stencil)."
 Releases the command buffer; does not release ENCODER, PASS, or QUEUE.
 
 Use this (instead of END-AND-SUBMIT) together with PRESENT-FRAME when the
-render target may not be a real surface -- e.g. a headless GPU-OFFSCREEN-TARGET
+render target may not be a real surface -- e.g. a HEADLESS-TARGET
 from cl-webgpu/headless, where presenting means something other than
 WGPU-SURFACE-PRESENT."
   (wgpu-render-pass-encoder-end (handle pass))
@@ -634,7 +634,8 @@ has been submitted."))
   (:documentation
    "Present/finalize the frame previously acquired from TARGET via
 ACQUIRE-FRAME-TEXTURE-VIEW. For a real surface this presents to the screen;
-offscreen targets may no-op here and expose readback separately."))
+headless targets (see cl-webgpu/headless) no-op here and expose readback
+separately."))
 
 (defun %decode-surface-texture-status (raw)
   "Map RAW (the status field's underlying u32) to a keyword. wgpu-native can

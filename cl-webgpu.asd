@@ -41,20 +41,8 @@
                 ((:file "package")
                  (:file "library")))))
 
-(asdf:defsystem #:cl-webgpu/glfw-dummy
-  :description "Headless drop-in replacement for cl-webgpu/glfw's window/loop calls, for SSH/CI testing"
-  :author "George Watson <gigolo@hotmail.co.uk>"
-  :license "MIT"
-  :version "0.0.1"
-  :serial t
-  :depends-on (#:cffi)
-  :components ((:module "glfw-dummy"
-                :components
-                ((:file "package")
-                 (:file "glfw-dummy")))))
-
 (asdf:defsystem #:cl-webgpu/headless
-  :description "Offscreen render target + PNG readback for headless testing"
+  :description "Render to an offscreen GPU target and read the result back as a PNG"
   :author "George Watson <gigolo@hotmail.co.uk>"
   :license "MIT"
   :version "0.0.1"

@@ -110,3 +110,31 @@ like MAKE-TEXTURE-2D, releasing both on exit."
       (cl-webgpu/wrapper:with-gpu* (((tex view) (cl-webgpu/wrapper:make-texture-2d device 4 4)))
         (is (typep tex 'cl-webgpu/wrapper:gpu-texture))
         (is (typep view 'cl-webgpu/wrapper:gpu-texture-view))))))
+
+(test headless-frame-clear-reads-back
+  "Render one frame into a HEADLESS-TARGET (clear to opaque red via
+WITH-HEADLESS-FRAME), then read it back: READBACK-TEXTURE-DATA's pixels must
+be exactly (255 0 0 255) (:RGBA8-UNORM of 1.0/0.0/0.0/1.0), and
+READBACK-TEXTURE-PNG must write a file."
+  (with-test-device (device queue)
+    (cl-webgpu/wrapper:with-gpu* ((target (cl-webgpu/headless:make-headless-target device 8 8)))
+      (cl-webgpu/headless:with-headless-frame (pass device queue target
+                                               :clear-r 1.0d0 :clear-g 0.0d0
+                                               :clear-b 0.0d0 :clear-a 1.0d0))
+      (let ((data (cl-webgpu/headless:readback-texture-data device queue target)))
+        (is (= (length data) (* 8 8 4)))
+        (is (equalp (subseq data 0 4) #(255 0 0 255)))
+        (is (equalp (subseq data (- (length data) 4)) #(255 0 0 255)))
+        (is (loop for px below (length data) by 4
+                  always (and (= (aref data px) 255)
+                              (= (aref data (+ px 1)) 0)
+                              (= (aref data (+ px 2)) 0)
+                              (= (aref data (+ px 3)) 255))))
+        (let ((path (make-pathname :name "cl-webgpu-headless-test"
+                                   :type "png"
+                                   :defaults (uiop:temporary-directory))))
+          (unwind-protect
+              (progn
+                (finishes (cl-webgpu/headless:readback-texture-png device queue target path))
+                (is (not (null (probe-file path)))))
+            (uiop:delete-file-if-exists path)))))))
