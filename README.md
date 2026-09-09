@@ -29,7 +29,7 @@ Or download a pre-built binary from the [wgpu-native releases page](https://gith
 ### 2. Build the C shim + GLFW bridge
 
 ```bash
-make        # builds libwebgpu_shim + libglfw3webgpu in shim/
+make        # builds libwebgpu_shim + libglfw3webgpu + libSDL3_webgpu in shim/
 ```
 
 The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), which CFFI handles poorly. On macOS the shim uses `-undefined dynamic_lookup`, so it resolves wgpu-native symbols at runtime.
@@ -62,11 +62,14 @@ The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), whi
 | System | Purpose |
 |---|---|
 | `cl-webgpu` | Auto-generated FFI bindings (types, enums, functions) |
-| `cl-webgpu/glfw` | GLFW surface creation helper |
+| `cl-webgpu/glfw` | GLFW surface creation helper (requires `cl-glfw3`) |
+| `cl-webgpu/sdl3` | SDL3 surface creation helper (requires `sdl3`) — see [docs/sdl3.md](docs/sdl3.md) |
 | `cl-webgpu/wrapper` | CLOS wrapper layer — easy-to-use API |
 | `cl-webgpu/headless` | Offscreen render target + PNG readback, no window/display server (requires `zpng`) |
 | `cl-webgpu/shader` | WGSL shader DSL |
 | `cl-webgpu/nuklear` | Nuklear immediate-mode GUI backend (requires `cl-nuklear`) |
+| `cl-webgpu/nuklear-glfw-glue` | GLFW mouse/keyboard/scroll input wiring for `cl-webgpu/nuklear` |
+| `cl-webgpu/nuklear-sdl3-glue` | SDL3 mouse/keyboard/scroll input wiring for `cl-webgpu/nuklear` |
 | `cl-webgpu/codegen` | Re-generates `cl-webgpu` bindings from C headers |
 
 ## Wrapper Layer (`cl-webgpu/wrapper`)
@@ -226,7 +229,9 @@ in `deps/webgpu/`. After updating headers:
 - [webgpu-headers](https://github.com/webgpu-native/webgpu-headers) [BSD-3-Clause](https://github.com/webgpu-native/webgpu-headers/blob/master/LICENSE)
 - [glfw3webgpu](https://github.com/eliemichel/glfw3webgpu) [MIT](https://github.com/eliemichel/glfw3webgpu/blob/master/LICENSE.txt)
 - [glfw3](https://github.com/glfw/glfw) [ZLIB](https://github.com/glfw/glfw/blob/master/LICENSE)
+- [sdl3webgpu](https://github.com/eliemichel/sdl3webgpu) [MIT](https://github.com/eliemichel/sdl3webgpu/blob/main/LICENSE.txt) (vendored in `deps/sdl3webgpu/`, for `cl-webgpu/sdl3`)
+- [SDL3](https://github.com/libsdl-org/SDL) [ZLIB](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt)
 - [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) [MIT](https://github.com/Immediate-Mode-UI/Nuklear/blob/master/LICENSE) (via [cl-nuklear](https://github.com/takeiteasy/cl-nuklear), for `cl-webgpu/nuklear`)
-- Dependencies: [cl-glfw3](https://github.com/AlexCharlton/cl-glfw3) (for `cl-webgpu/glfw`), [zpng](https://github.com/xach/zpng) (for `cl-webgpu/headless`), cffi, bordeaux-threads, alexandria, cl-ppcre, uiop
+- Dependencies: [cl-glfw3](https://github.com/AlexCharlton/cl-glfw3) (for `cl-webgpu/glfw`), [cl-sdl3](https://github.com/ellisvelo/cl-sdl3) (for `cl-webgpu/sdl3`), [zpng](https://github.com/xach/zpng) (for `cl-webgpu/headless`), cffi, bordeaux-threads, alexandria, cl-ppcre, uiop
 
 [MIT](LICENSE)

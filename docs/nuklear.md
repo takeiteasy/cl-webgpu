@@ -72,9 +72,39 @@ The pipeline uses a raw WGSL shader with one bind group (group 0):
 
 Alpha blending is enabled (SRC_ALPHA / ONE_MINUS_SRC_ALPHA).
 
+## Input wiring
+
+`cl-webgpu/nuklear` only renders; feeding mouse/keyboard/scroll into a Nuklear
+context is a per-windowing-backend glue system:
+
+| System | Backend | File |
+|---|---|---|
+| `cl-webgpu/nuklear-glfw-glue` | GLFW (`cl-webgpu/glfw`) | `nuklear/glfw-input.lisp` |
+| `cl-webgpu/nuklear-sdl3-glue` | SDL3 (`cl-webgpu/sdl3`) | `nuklear/sdl3-input.lisp` |
+
+Both expose the same two entry points:
+
+```lisp
+(install-input-callbacks window)   ; register scroll/text callbacks once
+(nuklear-new-frame ctx window)     ; call each frame, after event pump, before widgets
+```
+
+`nuklear-new-frame` opens `nk-input-begin`, feeds cursor position, mouse
+buttons, accumulated scroll, typed text and the tracked modifier/edit keys,
+then closes with `nk-input-end`. Cursor coordinates are scaled from logical
+points to framebuffer pixels to match `render-nuklear`'s projection.
+
+The GLFW glue uses GLFW's top-level scroll/char callbacks; the SDL3 glue uses
+an `SDL_AddEventWatch` callback (non-destructive — the app's own event loop
+still sees every event). Both accumulate into special variables drained each
+frame, so only one window's input can be tracked at a time — fine for the
+single-window demos here. `cl-webgpu/nuklear-sdl3-glue` also adds
+`remove-input-callbacks` to unregister the watch on shutdown.
+
 ## Example usage
 
-See `examples/nuklear-static.lisp` for a complete static demo (no input handling).
+- `examples/nuklear-static.lisp` — GLFW window, live slider + button driven by real input via `cl-webgpu/nuklear-glfw-glue`.
+- `examples/nuklear-static-sdl3.lisp` — the same demo on SDL3 via `cl-webgpu/nuklear-sdl3-glue` (see [sdl3.md](sdl3.md)).
 
 ```lisp
 (ql:quickload '(:cl-webgpu/wrapper :cl-webgpu/glfw :cl-webgpu/nuklear))
@@ -104,6 +134,5 @@ See `examples/nuklear-static.lisp` for a complete static demo (no input handling
 
 ## Known limitations / follow-up tickets
 
-- **No input wiring** — mouse/keyboard events are not forwarded to Nuklear. See tracker for the input ticket.
 - **Fixed buffer sizes** — vertex (512KB), index (128KB), and command (64KB) buffers are statically allocated. Complex UIs that overflow will silently clip. A dynamic resizing strategy is tracked separately.
 - **Single font** — only the default Nuklear font is supported. Custom TTF fonts require extending `make-nuklear-renderer`.

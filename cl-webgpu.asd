@@ -41,6 +41,18 @@
                 ((:file "package")
                  (:file "library")))))
 
+(asdf:defsystem #:cl-webgpu/sdl3
+  :description "SDL3 integration for cl-webgpu"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-webgpu #:sdl3)
+  :components ((:module "sdl3"
+                :components
+                ((:file "package")
+                 (:file "library")))))
+
 (asdf:defsystem #:cl-webgpu/headless
   :description "Render to an offscreen GPU target and read the result back as a PNG"
   :author "George Watson <gigolo@hotmail.co.uk>"
@@ -127,6 +139,17 @@
   :components ((:module "nuklear"
                 :components
                 ((:file "glfw-input")))))
+
+(asdf:defsystem #:cl-webgpu/nuklear-sdl3-glue
+  :description "SDL3 input wiring for cl-webgpu/nuklear (mouse/keyboard/scroll)"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-webgpu/nuklear #:cl-webgpu/sdl3)
+  :components ((:module "nuklear"
+                :components
+                ((:file "sdl3-input")))))
 
 (asdf:defsystem #:cl-webgpu/codegen
   :description "Code generator for cl-webgpu CFFI bindings from C headers"

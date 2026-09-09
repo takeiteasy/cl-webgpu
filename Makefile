@@ -13,6 +13,7 @@ LDFLAGS ?= -shared
 # Output library names
 ifeq ($(UNAME_S),Darwin)
     SHIM_LIB = libwebgpu_shim.dylib
+    SDL3_WEBGPU_LIB = shim/libSDL3_webgpu.dylib
     GLFW_COMBINED_LIB = shim/libglfw3.dylib
     GLFW_WEBGPU_LIB = shim/libglfw3webgpu.dylib
     GLFW_STATIC = deps/glfw/build/src/libglfw3.a
@@ -21,12 +22,14 @@ ifeq ($(UNAME_S),Darwin)
     UNDEFINED_FLAGS = -Wl,-undefined,dynamic_lookup
 else ifeq ($(OS),Windows_NT)
     SHIM_LIB = webgpu_shim.dll
+    SDL3_WEBGPU_LIB = shim/SDL3_webgpu.dll
     GLFW_COMBINED_LIB = shim/glfw3.dll
     GLFW_STATIC = deps/glfw/build/src/libglfw3.a
     WGPU_NATIVE_LIB = wgpu_native.dll
     WGPU_NATIVE_TARGET = deps/wgpu-native/target/release/$(WGPU_NATIVE_LIB)
 else
     SHIM_LIB = libwebgpu_shim.so
+    SDL3_WEBGPU_LIB = shim/libSDL3_webgpu.so
     GLFW_COMBINED_LIB = shim/libglfw3.so
     GLFW_STATIC = deps/glfw/build/src/libglfw3.a
     WGPU_NATIVE_LIB = libwgpu_native.so
@@ -34,7 +37,10 @@ else
 endif
 
 # Include paths for headers
-CFLAGS += -Ideps/webgpu -Ideps/glfw/include -Ideps/glfw3webgpu -Ishim
+CFLAGS += -Ideps/webgpu -Ideps/glfw/include -Ideps/glfw3webgpu -Ideps/sdl3webgpu -Ishim
+
+# SDL3 headers (homebrew on macOS provides pkg-config)
+SDL3_CFLAGS ?= $(shell pkg-config --cflags sdl3 2>/dev/null)
 
 # Platform-specific flags
 ifeq ($(UNAME_S),Darwin)
@@ -54,10 +60,11 @@ SHIM_SRCS = shim/webgpu_shim.c
 SHIM_OBJS = $(SHIM_SRCS:.c=.o)
 
 GLFW3WEBGPU_SRC = deps/glfw3webgpu/glfw3webgpu.c
+SDL3WEBGPU_SRC = deps/sdl3webgpu/sdl3webgpu.c
 
 .PHONY: all clean libwgpu-native libglfw
 
-all: $(SHIM_LIB) $(GLFW_WEBGPU_LIB)
+all: $(SHIM_LIB) $(GLFW_WEBGPU_LIB) $(SDL3_WEBGPU_LIB)
 
 # Build the shim library
 $(SHIM_LIB): $(SHIM_OBJS)
@@ -83,6 +90,26 @@ else
 	$(CC) $(CFLAGS) $(GLFW_DEFINES) -shared \
 	  -I deps/glfw/include -I deps/webgpu -I deps/glfw3webgpu \
 	  $(GLFW3WEBGPU_SRC) \
+	  $(UNDEFINED_FLAGS) \
+	  -o $@
+endif
+
+# Build sdl3webgpu bridge library.
+# Like the glfw3webgpu rule, uses -undefined dynamic_lookup so it binds to
+# whatever SDL3 instance is already loaded in the process (cl-sdl3 loads it).
+$(SDL3_WEBGPU_LIB): $(SDL3WEBGPU_SRC)
+ifeq ($(UNAME_S),Darwin)
+	$(CC) -x objective-c $(CFLAGS) $(SDL3_CFLAGS) -dynamiclib \
+	  -I deps/sdl3webgpu \
+	  $(SDL3WEBGPU_SRC) \
+	  $(UNDEFINED_FLAGS) \
+	  -framework Cocoa -framework QuartzCore -framework Metal \
+	  -install_name @rpath/libSDL3_webgpu.dylib \
+	  -o $@
+else
+	$(CC) $(CFLAGS) $(SDL3_CFLAGS) -shared \
+	  -I deps/sdl3webgpu \
+	  $(SDL3WEBGPU_SRC) \
 	  $(UNDEFINED_FLAGS) \
 	  -o $@
 endif
@@ -129,4 +156,4 @@ libwgpu-native:
 build-all: libglfw libwgpu-native all
 
 clean:
-	rm -f $(SHIM_OBJS) $(SHIM_LIB) $(GLFW_WEBGPU_LIB) $(GLFW_COMBINED_LIB)
+	trash $(SHIM_OBJS) $(SHIM_LIB) $(GLFW_WEBGPU_LIB) $(GLFW_COMBINED_LIB) $(SDL3_WEBGPU_LIB) 2>/dev/null || true

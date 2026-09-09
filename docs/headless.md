@@ -42,7 +42,7 @@ of `END-AND-SUBMIT` when TARGET might not be a real surface:
 ```
 
 Code written this way is windowing-agnostic: the same loop works against a
-real `GPU-SURFACE` (GLFW-created today, SDL3-created tomorrow — each backend
+real `GPU-SURFACE` (from `cl-webgpu/glfw` or `cl-webgpu/sdl3` — each backend
 is just a system that hands you a `GPU-SURFACE`) or a `HEADLESS-TARGET` from
 this package. Swap which one `target` is bound to and nothing else changes.
 
