@@ -94,12 +94,31 @@ buttons, accumulated scroll, typed text and the tracked modifier/edit keys,
 then closes with `nk-input-end`. Cursor coordinates are scaled from logical
 points to framebuffer pixels to match `render-nuklear`'s projection.
 
-The GLFW glue uses GLFW's top-level scroll/char callbacks; the SDL3 glue uses
-an `SDL_AddEventWatch` callback (non-destructive — the app's own event loop
-still sees every event). Both accumulate into special variables drained each
-frame, so only one window's input can be tracked at a time — fine for the
-single-window demos here. `cl-webgpu/nuklear-sdl3-glue` also adds
-`remove-input-callbacks` to unregister the watch on shutdown.
+### Shared plumbing — `cl-webgpu/nuklear-input-common`
+
+Both glue systems depend on `cl-webgpu/nuklear-input-common`
+(`nuklear/input-common.lisp`), which holds everything the two backends have in
+common:
+
+- the accumulator specials (`*scroll-x*` / `*scroll-y*` / `*text-buffer*`) and
+  `*debug-input*`, plus `accumulate-scroll` / `accumulate-char` /
+  `clear-accumulators` for the callbacks to call;
+- `pump-nuklear-frame`, which runs the whole `nk-input-begin` … `nk-input-end`
+  sequence and drains the accumulators. It takes the backend-specific pieces as
+  closures and alists: `:pixel-size`, `:point-size`, `:cursor-position`,
+  `:tracked-buttons` + `:button-pressed-p`, `:tracked-keys` + `:key-pressed-p`,
+  and an optional `:debug-when` gate.
+
+Each glue file is then just its key/button name tables, its callback (GLFW's
+top-level scroll/char callbacks) or event watch (SDL's non-destructive
+`SDL_AddEventWatch`, so the app's own event loop still sees every event), and a
+thin `nuklear-new-frame` that calls `pump-nuklear-frame` with the right
+closures.
+
+Because the accumulators are process-global, only one window's input can be
+tracked at a time — fine for the single-window demos here.
+`cl-webgpu/nuklear-sdl3-glue` also adds `remove-input-callbacks` to unregister
+the watch on shutdown.
 
 ## Example usage
 

@@ -79,6 +79,14 @@ means launching through `sdl3:make-this-thread-main`:
 `run` then calls `(sdl3:init :video)` … `(sdl3:quit)` directly; the main-thread
 message loop keeps running until `sdl3:quit` is handled.
 
+## Known issue — cl-sdl3 `mouse-state`
+
+cl-sdl3's `mouse-state` / `get-global-mouse-state` bind `SDL_GetMouseState`'s
+`x`/`y` out-params as `int*`, but SDL3 changed them to `float*` — so they
+return garbage coordinates. `cl-webgpu/nuklear-sdl3-glue` binds
+`SDL_GetMouseState` itself with the correct types as a workaround. If you call
+`SDL_GetMouseState` directly, do the same.
+
 ## Example
 
 `examples/nuklear-static-sdl3.lisp` — a full interactive demo: an SDL3 window,

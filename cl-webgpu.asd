@@ -129,13 +129,24 @@
                 ((:file "package")
                  (:file "backend")))))
 
+(asdf:defsystem #:cl-webgpu/nuklear-input-common
+  :description "Shared Nuklear input plumbing for the per-backend glue systems"
+  :author "George Watson <gigolo@hotmail.co.uk>"
+  :license "MIT"
+  :version "0.0.1"
+  :serial t
+  :depends-on (#:cl-webgpu/nuklear)
+  :components ((:module "nuklear"
+                :components
+                ((:file "input-common")))))
+
 (asdf:defsystem #:cl-webgpu/nuklear-glfw-glue
   :description "GLFW input wiring for cl-webgpu/nuklear (mouse/keyboard/scroll)"
   :author "George Watson <gigolo@hotmail.co.uk>"
   :license "MIT"
   :version "0.0.1"
   :serial t
-  :depends-on (#:cl-webgpu/nuklear #:cl-webgpu/glfw)
+  :depends-on (#:cl-webgpu/nuklear-input-common #:cl-webgpu/glfw)
   :components ((:module "nuklear"
                 :components
                 ((:file "glfw-input")))))
@@ -146,7 +157,7 @@
   :license "MIT"
   :version "0.0.1"
   :serial t
-  :depends-on (#:cl-webgpu/nuklear #:cl-webgpu/sdl3)
+  :depends-on (#:cl-webgpu/nuklear-input-common #:cl-webgpu/sdl3)
   :components ((:module "nuklear"
                 :components
                 ((:file "sdl3-input")))))

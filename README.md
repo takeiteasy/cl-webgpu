@@ -68,6 +68,7 @@ The shim wraps functions that pass structs by value (e.g. `WGPUStringView`), whi
 | `cl-webgpu/headless` | Offscreen render target + PNG readback, no window/display server (requires `zpng`) |
 | `cl-webgpu/shader` | WGSL shader DSL |
 | `cl-webgpu/nuklear` | Nuklear immediate-mode GUI backend (requires `cl-nuklear`) |
+| `cl-webgpu/nuklear-input-common` | Shared Nuklear input plumbing for the per-backend glue systems |
 | `cl-webgpu/nuklear-glfw-glue` | GLFW mouse/keyboard/scroll input wiring for `cl-webgpu/nuklear` |
 | `cl-webgpu/nuklear-sdl3-glue` | SDL3 mouse/keyboard/scroll input wiring for `cl-webgpu/nuklear` |
 | `cl-webgpu/codegen` | Re-generates `cl-webgpu` bindings from C headers |
