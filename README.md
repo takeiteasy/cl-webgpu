@@ -1,6 +1,23 @@
 # cl-webgpu
 
+> **Work in progress.** This project is under development; expect missing features and breaking changes.
+
 Common Lisp FFI bindings for [WebGPU](https://www.w3.org/TR/webgpu/) via [wgpu-native](https://github.com/gfx-rs/wgpu-native).
+
+## Installation
+
+From the takeiteasy Quicklisp dist:
+
+```lisp
+(ql-dist:install-dist "https://takeiteasy.github.io/ql-dist/dist/takeiteasy.txt")
+(ql:quickload :cl-webgpu)
+```
+
+Or clone into Quicklisp's local-projects:
+
+```sh
+git clone https://github.com/takeiteasy/cl-webgpu ~/quicklisp/local-projects/cl-webgpu
+```
 
 ## Requirements
 
