@@ -10,6 +10,6 @@ jobs:
     steps:
       - uses: takeiteasy/gh-ql-dist/notify@v1
         with:
-          repo: takeiteasy/ql-dist
+          repo: communal-software/ql-dist
           project: ${{ github.event.repository.name }}
           token: ${{ secrets.QL_DIST_TOKEN }}
