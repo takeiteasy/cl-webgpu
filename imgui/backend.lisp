@@ -389,7 +389,7 @@ END-AND-SUBMIT. QUEUE is a GPU-QUEUE."
                 ;; ImDrawCallback_ResetRenderState sentinel) are skipped, not
                 ;; run. A full backend would invoke the callback here and, for
                 ;; the sentinel, re-bind pipeline/buffers/bind-groups after it.
-                ;; Tracked on the sr.ht tracker.
+                ;; Tracked in https://github.com/communal-software/cl-webgpu/issues/3.
                 (let* ((elem (cffi:foreign-slot-value cmd '(:struct ig:draw-cmd) 'ig::elem-count))
                        (voff (cffi:foreign-slot-value cmd '(:struct ig:draw-cmd) 'ig::vtx-offset))
                        (ioff (cffi:foreign-slot-value cmd '(:struct ig:draw-cmd) 'ig::idx-offset))

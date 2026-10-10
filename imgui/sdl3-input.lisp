@@ -32,7 +32,7 @@
 
 ;; SDL3's SDL_GetMouseState takes float* out-params (SDL2 used int*). cl-sdl3's
 ;; SDL3:MOUSE-STATE still binds them as :int and reads the float bytes back as
-;; an integer -- garbage. Bind it ourselves with the correct type. (tracker #7)
+;; an integer -- garbage. Bind it ourselves with the correct type. (https://github.com/communal-software/cl-webgpu/issues/2)
 (cffi:defcfun ("SDL_GetMouseState" %sdl-get-mouse-state) :uint32
   (x (:pointer :float)) (y (:pointer :float)))
 
