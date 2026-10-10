@@ -792,7 +792,7 @@
     ;; single swizzle component (x/y/z/w, r/g/b/a, s/t/p/q), promote the node
     ;; to swizzle-access so all downstream passes (finalize, codegen, tree-shaker)
     ;; handle it correctly.  Calling (bindings concrete-type) has no applicable
-    ;; method and would signal an error (#26).
+    ;; method and would signal an error.
     (let* ((vec-type (cond ((typep struct-type 'concrete-type) struct-type)
                            ((and (typep struct-type 'array-type)
                                  (typep (base-type struct-type) 'concrete-type))

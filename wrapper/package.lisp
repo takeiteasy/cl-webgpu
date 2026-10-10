@@ -79,7 +79,7 @@
    #:+wgpu-buffer-usage-index+
    #:+wgpu-buffer-usage-uniform+
    #:+wgpu-buffer-usage-copy-dst+
-   ;; struct slot names — now exported from cl-webgpu (ticket #18 resolved)
+   ;; struct slot names — now exported from cl-webgpu
    #:next-in-chain #:next #:s-type
    #:data #:length
    #:label #:code #:chain

@@ -547,7 +547,7 @@ Each entry: (c-name lisp-name return-type (param-sym cffi-type) ...).")
         (:struct
          ;; Export the struct type name and all its field names so that downstream
          ;; packages can reference slots without the internal cl-webgpu:: double-colon
-         ;; syntax.  Resolves ticket #18.
+         ;; syntax.
          (push (c-type-name-to-symbol (getf d :name)) syms)
          (dolist (field (getf d :fields))
            (push (c-field-name-to-symbol (getf field :name)) syms)))
