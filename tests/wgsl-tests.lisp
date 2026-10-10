@@ -1,8 +1,8 @@
 ;;;; tests/wgsl-tests.lisp
 ;;;;
 ;;;; Regression tests for two cl-webgpu/shader DSL gaps found while porting
-;;;; star's pixel-planets shaders (star ticket #121): swizzle-component
-;;;; writes not marking their variable mutable, and no WGSL atan2 builtin.
+;;;; star's pixel-planets shaders: swizzle-component writes not marking
+;;;; their variable mutable, and no WGSL atan2 builtin.
 ;;;; Both were previously worked around downstream in star's
 ;;;; aux/pixel-planets/src/shaders/dsl-common.lisp rather than fixed here.
 
